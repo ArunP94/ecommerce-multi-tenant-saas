@@ -1,102 +1,167 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Building2,
+  Network,
+  Globe,
+  ShieldCheck,
+  Package,
+  CreditCard,
+} from "lucide-react";
 
-export default function Home() {
+export default async function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-svh bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="px-6 h-14 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
+            <span className="inline-block size-2 rounded-full bg-primary" />
+            Multi‑Tenant SaaS
+          </Link>
+          <nav className="flex items-center gap-3">
+            <Button asChild variant="ghost" size="sm">
+              <Link href="#features">Features</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="#pricing">Pricing</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link href="/admin">Dashboard</Link>
+            </Button>
+          </nav>
         </div>
+      </header>
+
+      <main className="px-6">
+        {/* Hero */}
+        <section className="py-20 md:py-28 text-center">
+          <div className="mx-auto max-w-2xl">
+            <Badge className="mb-4" variant="secondary">New</Badge>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
+              White‑label E‑Commerce for every brand
+            </h1>
+            <p className="mt-4 text-muted-foreground text-base md:text-lg">
+              Launch multi‑tenant storefronts with custom domains, role‑based admin,
+              and flexible catalogs. Built with Next.js 15, Prisma, and MongoDB.
+            </p>
+            <div className="mt-8 flex items-center justify-center gap-3">
+              <Button asChild size="lg">
+                <Link href="/admin">Go to dashboard</Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link href="#features">Explore features</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" className="py-8 md:py-12">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Network className="size-5" /> Multi‑tenant core
+                </CardTitle>
+                <CardDescription>
+                  Single database, tenant‑scoped models and indexes for scale.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="size-5" /> Custom domains
+                </CardTitle>
+                <CardDescription>
+                  Map subdomains or root domains per store with middleware routing.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="size-5" /> RBAC security
+                </CardTitle>
+                <CardDescription>
+                  Super Admin, Store Owner, and Customer roles with scoped access.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="size-5" /> Catalog & variants
+                </CardTitle>
+                <CardDescription>
+                  Categories, products, variant options, stock, and rich media.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="size-5" /> White‑label branding
+                </CardTitle>
+                <CardDescription>
+                  Logos, palette, typography, and layout blocks per storefront.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="size-5" /> Checkout‑ready
+                </CardTitle>
+                <CardDescription>
+                  Stripe‑based checkout and webhooks when you’re ready to sell.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </section>
+
+        {/* Simple pricing placeholder */}
+        <section id="pricing" className="py-12 md:py-16">
+          <Card className="text-center">
+            <CardHeader>
+              <CardTitle>Transparent pricing</CardTitle>
+              <CardDescription>
+                Start free while you build. Add billing when you launch.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-center gap-3">
+                <Button asChild size="lg">
+                  <Link href="/signin">Create your store</Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                  <Link href="#">Contact sales</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="mt-16 border-t">
+        <div className="px-6 h-14 flex items-center justify-between text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} Multi‑Tenant SaaS.</p>
+          <div className="flex items-center gap-4">
+            <Link href="#features" className="hover:underline">Features</Link>
+            <Link href="#pricing" className="hover:underline">Pricing</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
