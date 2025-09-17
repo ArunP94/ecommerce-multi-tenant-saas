@@ -1,40 +1,25 @@
-import { AppSidebar } from "@/components/admin/admin-sidebar";
-import { ChartAreaInteractive } from "@/components/admin/chart-area-interactive";
-import { DataTable } from "@/components/admin/data-table";
-import { SectionCards } from "@/components/admin/section-cards";
-import { SiteHeader } from "@/components/admin/admin-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
-import data from "./data.json";
+export default async function AdminPage() {
+  const session = await getServerSession(authOptions);
+  if (!session) return redirect("/signin");
+  const role = session.user.role;
 
-export default function Page() {
-  return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable data={data} />
-            </div>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
-  );
+  if (role === "SUPER_ADMIN") {
+    const last = (await cookies()).get("current_store_id")?.value ?? null;
+    if (last) {
+      const exists = await prisma.store.findUnique({ where: { id: last }, select: { id: true } });
+      if (exists) return redirect(`/admin/${last}`);
+    }
+    const first = await prisma.store.findFirst({ select: { id: true }, orderBy: { name: "asc" } });
+    if (first) return redirect(`/admin/${first.id}`);
+    return redirect("/admin/stores");
+  }
+
+  if (session.user.storeId) return redirect(`/admin/${session.user.storeId}`);
+  return redirect("/admin/stores");
 }

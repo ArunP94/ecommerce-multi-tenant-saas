@@ -1,8 +1,9 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
+import type { ComponentType, SVGProps } from "react"
+import * as Lucide from "lucide-react"
+import Link from "next/link"
 
-import { Button } from "@/components/ui/button"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -10,47 +11,55 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { usePathname } from "next/navigation"
 
+// Use string icon names to keep server-to-client props serializable
 export function NavMain({
   items,
+  currentStoreId: currentStoreIdProp,
 }: {
   items: {
     title: string
-    url: string
-    icon?: Icon
+    url: string // may include [storeId]
+    icon?: keyof typeof Lucide | string
   }[]
+  currentStoreId?: string
 }) {
+  const pathname = usePathname()
+  // Best-effort parse current storeId from path: /admin/:storeId/...
+  const parts = pathname.split("/").filter(Boolean)
+  const adminIdx = parts.indexOf("admin")
+  const segAfterAdmin = adminIdx >= 0 ? parts[adminIdx + 1] : undefined
+  const staticTop = new Set(["stores", "users", "account"]) // non store-scoped roots
+  const inferredStoreId = segAfterAdmin && !staticTop.has(segAfterAdmin) ? segAfterAdmin : undefined
+  const currentStoreId = currentStoreIdProp ?? inferredStoreId
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            <SidebarMenuButton
-              tooltip="Quick Create"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
-            >
-              <IconCirclePlusFilled />
-              <span>Quick Create</span>
-            </SidebarMenuButton>
-            <Button
-              size="icon"
-              className="size-8 group-data-[collapsible=icon]:opacity-0"
-              variant="outline"
-            >
-              <IconMail />
-              <span className="sr-only">Inbox</span>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const IconComp = item.icon
+              ? (Lucide[item.icon as keyof typeof Lucide] as ComponentType<SVGProps<SVGSVGElement>>)
+              : null
+
+            let href = item.url
+            const needsStore = href.includes("[storeId]")
+            if (needsStore) {
+              href = currentStoreId ? href.replace("[storeId]", currentStoreId) : "/admin"
+            }
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton tooltip={item.title} asChild aria-disabled={needsStore && !currentStoreId}>
+                  <Link href={href} aria-disabled={needsStore && !currentStoreId}>
+                    {IconComp ? <IconComp /> : null}
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# E-commerce Multi-tenant SaaS
 
-## Getting Started
+Next.js 15 + Shadcn UI scaffold with Phase 1 backend wiring: Prisma (MongoDB), NextAuth (JWT), RBAC middleware, and initial API routes.
 
-First, run the development server:
+## Quick start
+
+1. Copy envs
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+cp .env.example .env
+```
+
+Edit .env with your values:
+- DATABASE_URL
+- NEXTAUTH_URL
+- NEXTAUTH_SECRET
+
+2. Install dependencies
+
+```bash
+bun install
+# or: npm install / pnpm install / yarn install
+```
+
+3. Generate Prisma client and sync schema
+
+```bash
+bun run prisma:generate
+bun run db:push
+```
+
+4. Run dev server
+
+```bash
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Auth
+- Credentials provider only (email/password).
+- Create a user manually in DB for now (Phase 2 will add invites/register).
+  - Passwords are bcrypt-hashed in the `User.hashedPassword` field.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## RBAC & Tenancy
+- Middleware protects `/admin` and `/api/super-admin/*`.
+- Super Admin: full access, Store Owner/Staff: admin access, Customer: none.
+- Product endpoints are tenant-scoped by `storeId` path segment.
 
-## Learn More
+## API
+- POST /api/super-admin/stores — create store, assign owner by email.
+- GET/POST /api/stores/:storeId/products — list/create products (scoped).
 
-To learn more about Next.js, take a look at the following resources:
+## Next
+- Phase 2: Stripe, Uploadthing, Upstash, Mailtrap, more endpoints, tests.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Seed data
+Run after setting env variables (values read from environment; no secrets are printed):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# required
+ADMIN_EMAIL={{YOUR_ADMIN_EMAIL}} ADMIN_PASSWORD={{YOUR_ADMIN_PASSWORD}} bun run seed
 
-## Deploy on Vercel
+# optional owner (if omitted, Super Admin is set as demo store owner)
+OWNER_EMAIL={{YOUR_OWNER_EMAIL}} OWNER_PASSWORD={{YOUR_OWNER_PASSWORD}} bun run seed
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Stripe
+- Create checkout session: POST /api/stripe/create-checkout-session
+- Webhook: POST /api/webhooks/stripe (configure endpoint in Stripe dashboard)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Uploads
+- POST /api/uploads — save uploaded image metadata (intended to be called after client-side Uploadthing). Attach productId/variantId to link.
+- Avatar uploads via Uploadthing coming next (account settings page).
+
+### Redis (Upstash)
+- lib/redis.ts exposes a Redis client and rateLimit helper.
+
+### Email (Mailtrap)
+- lib/mail.ts exports sendMail(to, subject, html). Configure Mailtrap envs.

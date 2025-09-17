@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  STORE_OWNER
+  STAFF
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  CANCELLED
+  REFUNDED
+}
+
+model User {
+  id             String   @id @map("_id") @default(auto()) @db.ObjectId
+  email          String   @unique
+  name           String?
+  image          String?
+  hashedPassword String?
+  role           Role
+  storeId        String?  @db.ObjectId
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Store {
+  id           String   @id @map("_id") @default(auto()) @db.ObjectId
+  name         String
+  slug         String   @unique
+  customDomain String?
+  ownerId      String   @db.ObjectId
+  settings     Json
+  createdAt    DateTime @default(now())
+}
+
+model Image {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  url       String
+  altText   String?
+  metadata  Json?
+  // Optional relations to either Product or Variant (one of them)
+  productId String?  @db.ObjectId
+  product   Product? @relation(fields: [productId], references: [id])
+  variantId String?  @db.ObjectId
+  variant   Variant? @relation(fields: [variantId], references: [id])
+  createdAt DateTime  @default(now())
+}
+
+model Variant {
+  id         String   @id @map("_id") @default(auto()) @db.ObjectId
+  productId  String   @db.ObjectId
+  product    Product  @relation(fields: [productId], references: [id])
+  sku        String   @unique
+  title      String?
+  price      Float
+  inventory  Int
+  attributes Json
+  images     Image[]
+  createdAt  DateTime @default(now())
+}
+
+model OrderItem {
+  id        String  @id @map("_id") @default(auto()) @db.ObjectId
+  orderId   String  @db.ObjectId
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String  @db.ObjectId
+  variantId String? @db.ObjectId
+  quantity  Int
+  price     Float
+  title     String
+}
+
+model Product {
+  id          String    @id @map("_id") @default(auto()) @db.ObjectId
+  storeId     String    @db.ObjectId
+  title       String
+  description String?
+  sku         String?
+  price       Float?
+  images      Image[]
+  hasVariants Boolean   @default(false)
+  variants    Variant[]
+  categories  String[]
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Order {
+  id          String      @id @map("_id") @default(auto()) @db.ObjectId
+  storeId     String      @db.ObjectId
+  customerId  String      @db.ObjectId
+  items       OrderItem[]
+  total       Float
+  status      OrderStatus
+  paymentInfo Json
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @map("_id") @default(auto()) @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  userEmail String
+  expiresAt DateTime
+}
