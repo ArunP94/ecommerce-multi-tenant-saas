@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // Support method override from form POSTs with _method=DELETE for HTML forms
-export async function POST(req: Request, { params }: { params: { storeId: string } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ storeId: string }> }) {
   const contentType = req.headers.get('content-type') || '';
   let methodOverride = '';
   if (contentType.includes('application/x-www-form-urlencoded')) {
@@ -13,7 +13,8 @@ export async function POST(req: Request, { params }: { params: { storeId: string
   if (methodOverride === 'DELETE') {
     const url = new URL(req.url);
     const origin = url.origin;
-    const res = await fetch(`${origin}/api/super-admin/stores/${params.storeId}`, { method: 'DELETE' });
+    const { storeId } = await context.params;
+    const res = await fetch(`${origin}/api/super-admin/stores/${storeId}`, { method: 'DELETE' });
     const json = await res.json();
     return NextResponse.json(json, { status: res.status });
   }

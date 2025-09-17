@@ -66,6 +66,7 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
