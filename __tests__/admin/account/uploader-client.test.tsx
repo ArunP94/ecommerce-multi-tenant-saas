@@ -3,7 +3,11 @@
  */
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ClientAvatarUploader from '@/app/admin/account/uploader-client';
+import ClientAvatarUploader from '@/components/account/uploader-client';
+
+// Mock router.refresh and toasts
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }));
+jest.mock('sonner', () => ({ toast: { success: jest.fn(), error: jest.fn() } }));
 
 // Mock the uploadthing react dropzone to expose simple buttons to trigger callbacks
 interface MockDropzoneProps {
@@ -12,7 +16,6 @@ interface MockDropzoneProps {
 }
 
 jest.mock('@uploadthing/react', () => {
-  const React = require('react');
   return {
     UploadDropzone: (props: MockDropzoneProps) => (
       React.createElement('div', {},
@@ -24,7 +27,7 @@ jest.mock('@uploadthing/react', () => {
 });
 
 describe('ClientAvatarUploader (Dropzone)', () => {
-  it('shows success status when upload completes', async () => {
+  it('shows success status when upload completes and refreshes', async () => {
     render(<ClientAvatarUploader />);
     fireEvent.click(screen.getByText('Upload'));
     expect(await screen.findByText('Uploaded!')).toBeInTheDocument();

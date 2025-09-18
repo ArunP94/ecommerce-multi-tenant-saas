@@ -1,12 +1,7 @@
 "use client";
 
 import { CreditCard, EllipsisVertical, LogOut, Bell } from "lucide-react";
-
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,20 +17,15 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-
 import { signOut } from "next-auth/react";
 import { toast } from "sonner";
+import { useUser } from "@/context/user-context";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string;
-    role: string;
-    avatarUrl?: string | null;
-  };
-}) {
+export function NavUser() {
+  const { user } = useUser();
   const { isMobile } = useSidebar();
+
+  if (!user) return null;
 
   return (
     <SidebarMenu>
@@ -47,7 +37,7 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
+                <AvatarImage src={user.image || undefined} alt={user.name || "U"} />
                 <AvatarFallback className="rounded-lg">{user.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
@@ -68,7 +58,7 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
+                  <AvatarImage src={user.image || undefined} alt={user.name || "U"} />
                   <AvatarFallback className="rounded-lg">{user.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
@@ -91,7 +81,12 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => { toast.success("Signed out"); signOut({ callbackUrl: "/signin" }); }}>
+            <DropdownMenuItem
+              onClick={() => {
+                toast.success("Signed out");
+                signOut({ callbackUrl: "/signin" });
+              }}
+            >
               <LogOut />
               Log out
             </DropdownMenuItem>

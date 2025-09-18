@@ -6,8 +6,8 @@ import { test, expect } from '@playwright/test';
 test('signin flow', async ({ page }) => {
   await page.goto('/signin');
   await expect(page.getByRole('button', { name: /sign in/i })).toBeDisabled();
-  await page.getByLabel('Email').fill('admin@example.com');
-  await page.getByLabel('Password').fill('password');
+  await page.getByLabel('Email').fill('arunpurewal94@gmail.com');
+  await page.getByLabel('Password').fill('change-me');
   await expect(page.getByRole('button', { name: /sign in/i })).toBeEnabled();
   await page.getByRole('button', { name: /sign in/i }).click();
   await page.waitForURL('**/admin');
@@ -19,7 +19,7 @@ test('create and delete store', async ({ page }) => {
 
   // Fill create store form (rendered client-side)
   await page.getByLabel('Name').fill('E2E Store');
-  await page.getByLabel('Owner Email').fill('owner@example.com');
+  await page.getByLabel('Owner Email').fill('arunpurewal94@gmail.com');
   await page.getByRole('button', { name: /create/i }).click();
 
   // Verify store appears (simplified)
