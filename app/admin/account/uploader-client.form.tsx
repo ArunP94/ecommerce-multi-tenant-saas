@@ -10,16 +10,11 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useUser } from "@/context/user-context";
 
-const schema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
-});
+const schema = z.object({ name: z.string().min(1, { message: "Name is required" }) });
 
-export default function ClientAccountForm({ initialName }: { initialName: string; }) {
+export default function ClientAccountForm({ initialName }: { initialName: string }) {
   const [isPending, startTransition] = useTransition();
-  const { updateUser } = useUser();
-
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     mode: "onChange",
@@ -30,20 +25,16 @@ export default function ClientAccountForm({ initialName }: { initialName: string
     startTransition(async () => {
       const params = new URLSearchParams();
       params.set("name", values.name.trim());
-
       const res = await fetch("/api/account", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString(),
       });
-
       if (!res.ok) {
         toast.error("Failed to update profile");
         return;
       }
-
       toast.success("Profile updated");
-      updateUser({ name: values.name.trim() }); // update context immediately
     });
   }
 
@@ -55,11 +46,7 @@ export default function ClientAccountForm({ initialName }: { initialName: string
           <Input id="name" placeholder="Your name" {...form.register("name")} />
         </div>
         <CardFooter className="p-0">
-          <Button
-            type="submit"
-            className="min-w-24"
-            disabled={isPending || !form.formState.isValid}
-          >
+          <Button type="submit" className="min-w-24" disabled={isPending || !form.formState.isValid}>
             {isPending ? "Updating…" : "Update"}
           </Button>
         </CardFooter>

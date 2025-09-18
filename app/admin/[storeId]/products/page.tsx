@@ -1,6 +1,6 @@
 import { requireStoreAccess } from "@/lib/require-store";
 
-export default async function StoreProductsPage({ params }: { params: { storeId: string; }; }) {
+export default async function StoreProductsPage({ params }: { params: { storeId: string } }) {
   await requireStoreAccess(params.storeId);
 
   return (
