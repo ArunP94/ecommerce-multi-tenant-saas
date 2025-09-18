@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 
 export async function requireStoreAccess(storeIdParam: string | string[] | undefined) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) redirect("/signin");
 
   const storeId = Array.isArray(storeIdParam) ? storeIdParam[0] : storeIdParam;

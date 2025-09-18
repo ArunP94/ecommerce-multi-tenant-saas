@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { withAuth } from "next-auth/middleware";
 import { extractSlugFromHost, getBaseDomain, normalizeHost } from "@/lib/domain";
 
-export async function middleware(req: NextRequest) {
+export default withAuth(
+  async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // 1) Host-based tenant routing (subdomain or custom domain)
@@ -27,25 +28,46 @@ export async function middleware(req: NextRequest) {
   }
 
   // 2) Protect admin routes
-  if (pathname.startsWith("/admin") || pathname.startsWith("/api/super-admin")) {
-    const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-    if (!token) {
-      const url = new URL("/signin", req.url);
-      url.searchParams.set("callbackUrl", req.nextUrl.pathname);
-      return NextResponse.redirect(url);
-    }
-    const role = token?.role;
+  if (pathname.startsWith("/api/super-admin")) {
+    const token = req.nextauth?.token;
+    const role = token?.role as string;
     if (pathname.startsWith("/api/super-admin") && role !== "SUPER_ADMIN") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    // /admin is allowed for SUPER_ADMIN, STORE_OWNER, STAFF
-    if (!["SUPER_ADMIN", "STORE_OWNER", "STAFF"].includes(role ?? "")) {
-      const url = new URL("/", req.url);
-      return NextResponse.redirect(url);
-    }
   }
+
   return NextResponse.next();
-}
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl;
+        
+        // Allow public routes
+        if (!pathname.startsWith("/admin") && !pathname.startsWith("/api/super-admin")) {
+          return true;
+        }
+        
+        // Require authentication for admin routes
+        if (!token) {
+          return false;
+        }
+        
+        const role = token.role as string;
+        
+        // Admin routes require specific roles
+        if (pathname.startsWith("/admin")) {
+          return ["SUPER_ADMIN", "STORE_OWNER", "STAFF"].includes(role ?? "");
+        }
+        
+        return true;
+      },
+    },
+    pages: {
+      signIn: "/signin",
+    },
+  }
+);
 
 export const config = {
   matcher: ["/((?!_next|favicon.ico).*)"],

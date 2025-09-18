@@ -1,5 +1,4 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { DeleteStoreButton } from "@/components/admin/delete-store-button";
@@ -9,7 +8,7 @@ import { ClientOnly } from "@/components/core/client-only";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function StoresPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session || session.user.role !== "SUPER_ADMIN") {
     return (
       <div className="p-6">

@@ -1,15 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { StoreSelector } from "@/components/admin/store-selector";
 import { cookies } from "next/headers";
 import Link from "next/link";
 
 export async function SiteHeader() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   const role = session?.user.role ?? "CUSTOMER";
 
   let stores: { id: string; name: string; }[] = [];

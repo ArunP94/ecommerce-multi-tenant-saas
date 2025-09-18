@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { cache } from "react";
 
 export const credentialsSchema = z.object({
   email: z.string().email(),
@@ -62,9 +63,7 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
-export function auth() {
-  return getServerSession(authOptions);
-}
+export const auth = cache(() => getServerSession(authOptions));
 
 declare module "next-auth" {
   interface Session {

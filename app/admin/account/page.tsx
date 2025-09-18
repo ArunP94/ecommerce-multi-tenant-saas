@@ -1,12 +1,11 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import AccountAvatar from "@/components/account/account-avatar";
 import ClientAccountForm from "@/components/account/client-account-form";
 
 export default async function AccountPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session) return null;
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
 

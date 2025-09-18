@@ -1,7 +1,8 @@
 // context/user-context.tsx
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { User } from "@prisma/client"; // or wherever your User type is
 
 interface UserContextType {
@@ -14,6 +15,23 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode; }) {
     const [user, setUser] = useState<User | null>(null);
+    const { data: session } = useSession();
+
+    useEffect(() => {
+        if (session?.user) {
+            setUser({
+                id: session.user.id,
+                email: session.user.email || "",
+                name: session.user.name || null,
+                image: session.user.image || null,
+                role: session.user.role,
+                storeId: session.user.storeId || null,
+                hashedPassword: null,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+        }
+    }, [session]);
 
     const updateUser = (data: Partial<User>) => {
         setUser((prev) => (prev ? { ...prev, ...data } : prev));
