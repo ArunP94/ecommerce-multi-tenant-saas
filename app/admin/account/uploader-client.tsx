@@ -27,12 +27,8 @@ export default function ClientAvatarUploader() {
 
   return (
     <div className="flex flex-col gap-2">
-      <UploadButton<OurFileRouter>
+      <UploadButton<OurFileRouter, "avatar">
         endpoint="avatar"
-        onUploadStart={() => {
-          window.dispatchEvent(new Event("avatar:upload:start"));
-          setStatus("Uploading…");
-        }}
         onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
           try {
             const f = Array.isArray(files) && files.length > 0 ? files[0] : undefined;
