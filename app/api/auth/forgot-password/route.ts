@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "node:crypto";
 import { sendMail } from "@/lib/mail";
+import { resetPasswordEmail } from "@/lib/email-templates";
 
 export async function POST(req: Request) {
   const { email } = await req.json();
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     await sendMail({
       to: user.email,
       subject: "Reset your password",
-      html: `<p>Click the link to reset your password:</p><p><a href="${link}">${link}</a></p>`,
+      html: resetPasswordEmail({ actionUrl: link }),
     });
   } catch {}
 

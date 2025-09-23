@@ -77,4 +77,17 @@ OWNER_EMAIL={{YOUR_OWNER_EMAIL}} OWNER_PASSWORD={{YOUR_OWNER_PASSWORD}} bun run 
 - lib/redis.ts exposes a Redis client and rateLimit helper.
 
 ### Email (Mailtrap)
-- lib/mail.ts exports sendMail(to, subject, html). Configure Mailtrap envs.
+- lib/mail.ts exports sendMail(to, subject, html). Configure Mailtrap envs:
+  - MAIL_HOST
+  - MAIL_PORT
+  - MAIL_USER
+  - MAIL_PASS
+
+Example (Mailtrap SMTP):
+
+```
+MAIL_HOST=sandbox.smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USER={{MAILTRAP_USERNAME}}
+MAIL_PASS={{MAILTRAP_PASSWORD}}
+```
