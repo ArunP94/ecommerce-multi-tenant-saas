@@ -1,37 +1,32 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { StoreSelector } from "@/components/admin/store-selector";
-import { cookies } from "next/headers";
+import { PanelLeftIcon } from "lucide-react";
 import Link from "next/link";
 
-export async function SiteHeader() {
-  const session = await auth();
-  const role = session?.user.role ?? "CUSTOMER";
-
-  let stores: { id: string; name: string; }[] = [];
-  let currentStoreId: string | null = null;
-
-  if (role === "SUPER_ADMIN") {
-    stores = await prisma.store.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } });
-  } else if (session?.user.storeId) {
-    const store = await prisma.store.findUnique({ where: { id: session.user.storeId }, select: { id: true, name: true } });
-    if (store) stores = [store];
-  }
-  // Default for SUPER_ADMIN: last opened (cookie) if exists, else first
-  const cookieStore = (await cookies()).get("current_store_id")?.value ?? null;
-  if (role === "SUPER_ADMIN" && cookieStore && stores.some((s) => s.id === cookieStore)) {
-    currentStoreId = cookieStore;
-  } else {
-    currentStoreId = session?.user.storeId ?? stores[0]?.id ?? null;
-  }
-
+export function SiteHeader({
+  role,
+  stores,
+  currentStoreId,
+}: {
+  role: string;
+  stores: { id: string; name: string; }[];
+  currentStoreId: string | null;
+}) {
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear py-2">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Toggle Sidebar"
+          onClick={() => window.dispatchEvent(new Event("sidebar:toggle"))}
+          className="-ml-1"
+        >
+          <PanelLeftIcon />
+        </Button>
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <div className="flex items-center gap-2">
           <StoreSelector stores={stores} currentStoreId={currentStoreId} readOnly={role !== "SUPER_ADMIN"} />

@@ -1,7 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import { requireStoreAccess } from "@/lib/require-store";
 
-export default async function StoreOrdersPage({ params }: { params: { storeId: string } }) {
-  await requireStoreAccess(params.storeId);
+export default async function StoreOrdersPage({ params }: { params: Promise<{ storeId: string }> }) {
+  const { storeId } = await params;
+  await requireStoreAccess(storeId);
 
   return (
     <div className="p-6">

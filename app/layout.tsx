@@ -18,6 +18,9 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "@/components/ui/sonner";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 
 export default function RootLayout({
   children,
@@ -29,6 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         {children}
         <Toaster richColors closeButton position="top-right" />
       </body>

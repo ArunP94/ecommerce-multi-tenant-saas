@@ -34,6 +34,8 @@ export default function ClientAccountForm({ initialName }: { initialName: string
         toast.error("Failed to update profile");
         return;
       }
+      // Reflect immediately in sidebar and preview
+      window.dispatchEvent(new CustomEvent("user:updated", { detail: { name: values.name.trim() } }));
       toast.success("Profile updated");
     });
   }

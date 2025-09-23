@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import ClientAvatarUploader from "./uploader-client";
 import ClientAccountForm from "./uploader-client.form";
+import ClientAvatarPreview from "./avatar-preview.client";
 
 export default async function AccountPage() {
   const session = await auth();
@@ -25,12 +26,7 @@ export default async function AccountPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                {user?.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.image} alt="avatar" className="size-14 rounded-lg object-cover" />
-                ) : (
-                  <div className="size-14 rounded-lg bg-muted" />
-                )}
+                <ClientAvatarPreview initialUrl={user?.image ?? null} />
                 <div className="flex-1">
                   <ClientAvatarUploader />
                 </div>

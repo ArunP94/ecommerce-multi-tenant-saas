@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const form = await req.formData();
   const name = (form.get("name") as string | null) ?? undefined;
-  if (!name) return NextResponse.redirect(new URL("/admin/account", req.url));
-  await prisma.user.update({ where: { id: session.user.id }, data: { name } });
-  return NextResponse.redirect(new URL("/admin/account", req.url));
+  if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  const updated = await prisma.user.update({ where: { id: session.user.id }, data: { name } });
+  return NextResponse.json({ success: true, user: { id: updated.id, name: updated.name, image: updated.image } });
 }
