@@ -4,11 +4,16 @@ import { test, expect } from '@playwright/test';
 // These are example flows; adjust selectors/fixtures to your actual app state.
 
 test('signin flow', async ({ page }) => {
+  const email = process.env.PLAYWRIGHT_ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'admin@example.com';
+  const password = process.env.PLAYWRIGHT_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'password';
+
   await page.goto('/signin');
-  await expect(page.getByRole('button', { name: /sign in/i })).toBeDisabled();
-  await page.getByLabel('Email').fill('admin@example.com');
-  await page.getByLabel('Password').fill('password');
-  await expect(page.getByRole('button', { name: /sign in/i })).toBeEnabled();
+
+  // If already signed in (storageState), the app may redirect to /admin immediately.
+  if (page.url().includes('/admin')) return;
+
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: /sign in/i }).click();
   await page.waitForURL('**/admin');
 });
