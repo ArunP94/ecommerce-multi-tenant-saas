@@ -58,12 +58,12 @@ export default function SignInPage() {
             </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" placeholder="you@example.com" type="email" {...form.register("email")} />
                 </div>
                 <div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <Link href="/forgot-password" className="text-xs text-muted-foreground hover:underline">Forgot password?</Link>
                   </div>

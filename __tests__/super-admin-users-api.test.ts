@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from "crypto";
 
 jest.mock("@/lib/auth", () => ({ auth: jest.fn() }));
@@ -127,4 +128,3 @@ describe("Super Admin Users API", () => {
       );
     });
   });
-});

@@ -56,7 +56,10 @@ export function AdminSidebar({
   ];
   const staffItems: { title: string; url: string; icon?: keyof typeof Lucide }[] = [
     { title: "Products", url: "/admin/[storeId]/products", icon: "ListChecks" },
+    { title: "Categories", url: "/admin/[storeId]/categories", icon: "Tags" },
+    { title: "Inventory", url: "/admin/[storeId]/inventory", icon: "Boxes" },
     { title: "Orders", url: "/admin/[storeId]/orders", icon: "FileText" },
+    { title: "Settings", url: "/admin/[storeId]/settings", icon: "Settings" },
   ];
 
   const navMain = [

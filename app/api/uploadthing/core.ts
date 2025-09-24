@@ -16,6 +16,17 @@ export const ourFileRouter = {
       await prisma.user.update({ where: { id: metadata.userId }, data: { image: file.url } });
       return { uploadedBy: metadata.userId, url: file.url };
     }),
+  productImage: f({ image: { maxFileCount: 20, maxFileSize: "8MB" } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session || !session.user?.id) throw new Error("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // For product images, we don't persist immediately. The client will call /api/uploads
+      // to attach to a product or variant. We just return the URL here.
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
