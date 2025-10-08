@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import VariantImagesDialog from "@/components/admin/products/variant-images-dialog";
 
@@ -159,6 +160,48 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
   });
 
   const [categoryInput, setCategoryInput] = useState("");
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryHighlight, setCategoryHighlight] = useState(0);
+  const allCategories = useMemo(() => Array.from(new Set(storeSettings?.categories ?? [])), [storeSettings]);
+  const filteredCategories = useMemo(() => {
+    const term = categoryFilter.toLowerCase();
+    return allCategories.filter((c) => c.toLowerCase().includes(term));
+  }, [allCategories, categoryFilter]);
+
+  function addCategory(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const current = form.getValues("categories") || [];
+    const next = Array.from(new Set([...current, trimmed]));
+    form.setValue("categories", next);
+  }
+
+  function onCategoryFilterKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    const term = categoryFilter.trim();
+    const hasExact = filteredCategories.some((c) => c.toLowerCase() === term.toLowerCase());
+    const canCreate = term.length > 0 && !hasExact;
+    const total = filteredCategories.length + (canCreate ? 1 : 0);
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (total > 0) setCategoryHighlight((i) => (i + 1) % total);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (total > 0) setCategoryHighlight((i) => (i - 1 + total) % total);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (total === 0) return;
+      if (categoryHighlight < filteredCategories.length) {
+        addCategory(filteredCategories[categoryHighlight]);
+      } else if (canCreate) {
+        addCategory(term);
+      }
+      setCategoryMenuOpen(false);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setCategoryMenuOpen(false);
+    }
+  }
 
   // Image dragging
   const sensors = useSensors(useSensor(PointerSensor));
@@ -477,36 +520,66 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                       }}
                       className="w-64"
                     />
-                    {storeSettings?.categories && storeSettings.categories.length > 0 ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Select:</span>
-                        <div className="flex flex-wrap gap-2">
-                          {storeSettings.categories.map((c) => (
-                            <Button
-                              type="button"
-                              key={c}
-                              variant="outline"
-                              size="sm"
-                              className="text-xs px-2 py-1 h-auto"
-                              onClick={() => {
-                                if (!form.getValues("categories").includes(c)) {
-                                  form.setValue("categories", [...form.getValues("categories"), c]);
-                                }
-                              }}
-                            >
-                              {c}
-                            </Button>
-                          ))}
+                    <DropdownMenu open={categoryMenuOpen} onOpenChange={(o) => { setCategoryMenuOpen(o); if (o) { setCategoryFilter(""); setCategoryHighlight(0); } }}>
+                      <DropdownMenuTrigger asChild>
+                        <Button type="button" variant="outline" size="sm">Browse…</Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-64 p-2">
+                        <div className="space-y-2">
+                          <Input
+                            autoFocus
+                            placeholder="Search categories…"
+                            value={categoryFilter}
+                            onChange={(e) => { setCategoryFilter(e.target.value); setCategoryHighlight(0); }}
+                            onKeyDown={onCategoryFilterKeyDown}
+                          />
+                          <div className="max-h-60 overflow-auto rounded border">
+                            {(() => {
+                              const term = categoryFilter.trim();
+                              const items = filteredCategories;
+                              const canCreate = term.length > 0 && !allCategories.some((c) => c.toLowerCase() === term.toLowerCase());
+                              return (
+                                <div>
+                                  {items.length === 0 && !canCreate ? (
+                                    <div className="px-2 py-2 text-sm text-muted-foreground">No results</div>
+                                  ) : null}
+                                  {items.map((c, idx) => (
+                                    <Button
+                                      key={c}
+                                      type="button"
+                                      variant="ghost"
+                                      className={`w-full justify-start ${idx === categoryHighlight ? "bg-muted" : ""}`}
+                                      onMouseEnter={() => setCategoryHighlight(idx)}
+                                      onClick={() => { addCategory(c); setCategoryMenuOpen(false); }}
+                                    >
+                                      {c}
+                                    </Button>
+                                  ))}
+                                  {canCreate ? (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      className={`w-full justify-start ${categoryHighlight === items.length ? "bg-muted" : ""}`}
+                                      onMouseEnter={() => setCategoryHighlight(items.length)}
+                                      onClick={() => { addCategory(term); setCategoryMenuOpen(false); }}
+                                    >
+                                      Create “{term}”
+                                    </Button>
+                                  ) : null}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
-                      </div>
-                    ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button type="button" onClick={addCategoryFromInput}>Add</Button>
                     <Button type="button" variant="outline" asChild>
                       <a href={`/admin/${storeId}/categories`}>Manage</a>
                     </Button>
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {form.watch("categories").map((cat) => (
+                    {Array.from(new Set(form.watch("categories") || [])).map((cat) => (
                       <span key={cat} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs">
                         {cat}
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeCategory(cat)} aria-label={`Remove ${cat}`}>
