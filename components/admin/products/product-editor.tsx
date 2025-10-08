@@ -11,16 +11,21 @@ export default function ProductEditor({ storeId, product }: { storeId: string; p
 
   // Transform API product to ProductFormValues
   const initial: ProductFormValues = React.useMemo(() => {
-const metadata = (product as { metadata?: unknown } | null)?.metadata as Record<string, unknown> | undefined || {};
+const metadata = ((product as { metadata?: unknown } | null)?.metadata ?? {}) as {
+  status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
+  currency?: string;
+  options?: unknown;
+  sale?: { price?: number; start?: string | Date; end?: string | Date };
+};
     const status = metadata?.status ?? "DRAFT";
     const currency = metadata?.currency ?? "GBP";
-    const options = Array.isArray(metadata?.options) ? metadata.options : [];
+const options = Array.isArray(metadata?.options) ? (metadata.options as Array<{ name: string; type: "color" | "size" | "custom"; values: Array<{ value: string; hex?: string }> }>) : [];
 
 const images = ((product as { images?: { id?: string; url: string; altText?: string | null; metadata?: unknown }[] } | null)?.images || []).map((img, idx: number) => ({
       id: img.id || String(idx),
       url: img.url,
       altText: img.altText || undefined,
-      isPrimary: Boolean(img.metadata?.isPrimary) || idx === 0,
+isPrimary: Boolean((img.metadata as Record<string, unknown> | undefined)?.["isPrimary"]) || idx === 0,
     }));
 
 const variants = ((product as { variants?: { id: string; sku: string; price: number; inventory: number; attributes?: unknown; images?: { url: string; altText?: string | null; metadata?: unknown }[] }[] } | null)?.variants || []).map((v) => {

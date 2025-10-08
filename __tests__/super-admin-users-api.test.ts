@@ -36,9 +36,12 @@ function jsonRequest(body: unknown) {
   });
 }
 
-describe("Super Admin Users API", () => {
-    jest.spyOn(crypto, "randomBytes").mockReturnValue(Buffer.from("testtoken"));
-  });
+beforeAll(() => {
+  jest.spyOn(crypto, "randomBytes").mockImplementation(() => Buffer.from("testtoken"));
+});
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
   describe("POST /api/super-admin/users/invite", () => {
     it("rejects non-super-admin", async () => {
@@ -102,7 +105,6 @@ describe("Super Admin Users API", () => {
     it("rejects non-super-admin", async () => {
       auth.mockResolvedValue({ user: { id: "u1", role: "STAFF" } });
       const { GET: usersGet } = await import("@/app/api/super-admin/users/route");
-      // @ts-expect-error - GET signature is () => Promise<Response>
       const res: Response = await usersGet();
       expect(res.status).toBe(403);
     });
@@ -116,7 +118,6 @@ describe("Super Admin Users API", () => {
       prismaStore.findMany.mockResolvedValue([{ id: "s1", name: "Store One" }]);
 
       const { GET: usersGet } = await import("@/app/api/super-admin/users/route");
-      // @ts-expect-error - GET signature is () => Promise<Response>
       const res: Response = await usersGet();
       expect(res.status).toBe(200);
       const json = await res.json();

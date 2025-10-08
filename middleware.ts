@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequestWithAuth } from "next-auth/middleware";
 import { withAuth } from "next-auth/middleware";
 import { extractSlugFromHost, getBaseDomain, normalizeHost } from "@/lib/domain";
 
 export default withAuth(
-  async function middleware(req: NextRequest) {
+  async function middleware(req: NextRequestWithAuth) {
   const { pathname } = req.nextUrl;
 
   // 1) Host-based tenant routing (subdomain or custom domain)

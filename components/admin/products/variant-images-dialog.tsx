@@ -7,7 +7,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GripVertical, Image as ImageIcon } from "lucide-react";
 
@@ -26,15 +26,15 @@ function SortableThumb({ item, onRemove, onPrimary, onAltChange }: {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={item.url} alt={item.altText || "variant"} className="h-24 w-full object-cover rounded" />
       <div className="mt-2 flex items-center gap-2">
-        <button type="button" className="bg-muted rounded p-1" {...attributes} {...listeners} aria-label="Drag">
+        <Button type="button" variant="secondary" size="icon" className="rounded p-1 size-6" {...attributes} {...listeners} aria-label="Drag">
           <GripVertical className="size-4" />
-        </button>
-        <button type="button" className={`rounded px-2 py-1 text-xs ${item.isPrimary ? "bg-primary text-primary-foreground" : "bg-muted"}`} onClick={onPrimary}>
+        </Button>
+        <Button type="button" variant={item.isPrimary ? "default" : "outline"} size="sm" className="h-6 px-1 text-[10px]" onClick={onPrimary}>
           {item.isPrimary ? "Primary" : "Make primary"}
-        </button>
-        <button type="button" className="ml-auto text-xs underline" onClick={onRemove}>
+        </Button>
+        <Button type="button" variant="destructive" size="sm" className="ml-auto" onClick={onRemove}>
           Remove
-        </button>
+        </Button>
       </div>
       <div className="mt-2">
         <Input placeholder="Alt text" value={item.altText ?? ""} onChange={(e) => onAltChange(e.target.value)} />
@@ -111,7 +111,7 @@ export default function VariantImagesDialog({ open, onOpenChange, images, onChan
                 const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
                 if (urls.length > 0) addUrls(urls);
               }}
-              appearance={{ container: "w-fit", button: "inline-flex items-center gap-2" as unknown as string }}
+              appearance={{ container: "w-fit", button: `${buttonVariants({ variant: "default", size: "default" })}` as unknown as string }}
               content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-2"><ImageIcon className="size-4" /> {ready ? "Upload" : "…"}</span>) }}
             />
             <span className="text-xs text-muted-foreground">Drag to reorder. Choose one Primary.</span>

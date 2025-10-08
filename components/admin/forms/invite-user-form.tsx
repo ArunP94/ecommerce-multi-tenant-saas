@@ -12,7 +12,7 @@ import * as z from "zod";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Valid email is required" }),
-  role: z.enum(["STORE_OWNER", "STAFF"], { required_error: "Role is required" }),
+  role: z.enum(["STORE_OWNER", "STAFF"]),
   storeId: z.string().min(1, { message: "Select a store" }),
 });
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 const imageInput = z.object({
   url: z.string().url(),
@@ -15,7 +16,7 @@ const variantInput = z.object({
   sku: z.string().min(1),
   price: z.number().nonnegative(),
   inventory: z.number().int().min(0).default(0),
-  attributes: z.record(z.any()).default({}),
+  attributes: z.record(z.string(), z.unknown()).default({}),
   images: z.array(imageInput).default([]),
   salePrice: z.number().nonnegative().optional(),
   saleStart: z.string().optional(),
@@ -80,7 +81,8 @@ export async function POST(
   if (role !== "SUPER_ADMIN" && userStoreId !== storeId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
-  if (!(["SUPER_ADMIN", "STORE_OWNER"].includes(role))) {
+  // Allow store staff to create products for their store
+  if (!(["SUPER_ADMIN", "STORE_OWNER", "STAFF"].includes(role))) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
@@ -132,16 +134,18 @@ export async function POST(
   }
 
   // Variant SKU validations: duplicates in payload and collisions in DB
-  const variantSkus = (variants ?? []).map(v => v.sku).filter((s): s is string => typeof s === "string");
-  const dupInPayload = new Set<string>();
-  for (const s of variantSkus) {
-    if (dupInPayload.has(s)) {
-      return NextResponse.json({ error: `Duplicate variant SKU in request: ${s}` }, { status: 400 });
+  // Build variants with auto-generated SKUs if missing and validate uniqueness
+  const makeSku = () => `V-${Math.random().toString(36).slice(2,6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+  const variantsWithSku = (variants ?? []).map((v) => ({ ...v, sku: (v.sku?.trim() || makeSku()) }));
+  const payloadSkuSet = new Set<string>();
+  for (const v of variantsWithSku) {
+    if (payloadSkuSet.has(v.sku)) {
+      return NextResponse.json({ error: `Duplicate variant SKU in request: ${v.sku}` }, { status: 400 });
     }
-    dupInPayload.add(s);
+    payloadSkuSet.add(v.sku);
   }
-  if (variantSkus.length > 0) {
-    const existingVariants = await prisma.variant.findMany({ where: { sku: { in: variantSkus } }, select: { sku: true } });
+  if (variantsWithSku.length > 0) {
+    const existingVariants = await prisma.variant.findMany({ where: { sku: { in: Array.from(payloadSkuSet) } }, select: { sku: true } });
     if (existingVariants.length > 0) {
       return NextResponse.json({ error: `Variant SKU(s) already exist: ${existingVariants.map(v => v.sku).join(", ")}` }, { status: 400 });
     }
@@ -160,7 +164,7 @@ export async function POST(
   }));
 
 const variantsCreate = hasVariants
-      ? (variants ?? []).map((v) => {
+      ? variantsWithSku.map((v) => {
         const anyPrimaryAtVariant = v.images?.some(i => i.isPrimary) ?? false;
         const imagesCreate = (v.images ?? []).map((img, idx) => ({
           url: img.url,
@@ -183,7 +187,7 @@ const variantsCreate = hasVariants
           sku: v.sku,
           price: v.price,
           inventory: typeof v.inventory === "number" ? v.inventory : 0,
-          attributes,
+          attributes: attributes as Prisma.InputJsonValue,
           images: { create: imagesCreate },
         };
       })
@@ -211,7 +215,7 @@ const variantsCreate = hasVariants
       price: hasVariants ? null : (typeof price === "number" ? price : null),
       hasVariants,
       categories,
-      metadata,
+      metadata: metadata as Prisma.InputJsonValue,
       images: productImagesCreate.length > 0 ? { create: productImagesCreate } : undefined,
       variants: variantsCreate && variantsCreate.length > 0 ? { create: variantsCreate } : undefined,
     },

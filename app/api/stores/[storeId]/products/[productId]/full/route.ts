@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 // Reuse the same input structure as create for full replace update
 const imageInput = z.object({
@@ -16,7 +17,7 @@ const variantInput = z.object({
   sku: z.string().min(1),
   price: z.number().nonnegative(),
   inventory: z.number().int().min(0).default(0),
-  attributes: z.record(z.any()).default({}),
+  attributes: z.record(z.string(), z.unknown()).default({}),
   images: z.array(imageInput).default([]),
   salePrice: z.number().nonnegative().optional(),
   saleStart: z.string().optional(),
@@ -85,13 +86,14 @@ export async function PUT(
     if (existingSku) return NextResponse.json({ error: "A product with this SKU already exists in this store." }, { status: 400 });
   }
 
-  const variantSkus = variants.map((v) => v.sku);
+  const makeSku = () => `V-${Math.random().toString(36).slice(2,6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+  const variantsWithSku = variants.map((v) => ({ ...v, sku: (v.sku?.trim() || makeSku()) }));
   const dupSet = new Set<string>();
-  for (const s of variantSkus) {
-    if (dupSet.has(s)) return NextResponse.json({ error: `Duplicate variant SKU in request: ${s}` }, { status: 400 });
-    dupSet.add(s);
+  for (const v of variantsWithSku) {
+    if (dupSet.has(v.sku)) return NextResponse.json({ error: `Duplicate variant SKU in request: ${v.sku}` }, { status: 400 });
+    dupSet.add(v.sku);
   }
-  const existingCollisions = await prisma.variant.findMany({ where: { sku: { in: variantSkus } }, select: { sku: true, productId: true, id: true } });
+  const existingCollisions = await prisma.variant.findMany({ where: { sku: { in: Array.from(dupSet) } }, select: { sku: true, productId: true, id: true } });
   const collisions = existingCollisions.filter((v) => v.productId !== productId);
   if (collisions.length > 0) return NextResponse.json({ error: `Variant SKU(s) already exist: ${collisions.map((c) => c.sku).join(", ")}` }, { status: 400 });
 
@@ -127,7 +129,7 @@ export async function PUT(
   }));
 
   const variantsCreate = hasVariants
-    ? variants.map((v) => {
+    ? variantsWithSku.map((v) => {
         const anyVariantPrimary = v.images?.some((i) => i.isPrimary) ?? false;
         const imagesCreate = (v.images ?? []).map((img, idx) => ({
           url: img.url,
@@ -142,7 +144,7 @@ export async function PUT(
         if (v.salePrice !== undefined || v.saleStart || v.saleEnd) {
           (attributes as Record<string, unknown>)["sale"] = { price: v.salePrice ?? null, start: v.saleStart ? new Date(v.saleStart) : null, end: v.saleEnd ? new Date(v.saleEnd) : null } as unknown;
         }
-        return { sku: v.sku, price: v.price, inventory: v.inventory ?? 0, attributes, images: { create: imagesCreate } };
+        return { sku: v.sku, price: v.price, inventory: v.inventory ?? 0, attributes: attributes as Prisma.InputJsonValue, images: { create: imagesCreate } };
       })
     : undefined;
 
@@ -155,7 +157,7 @@ export async function PUT(
       price: hasVariants ? null : (typeof price === "number" ? price : null),
       hasVariants,
       categories,
-      metadata,
+      metadata: metadata as Prisma.InputJsonValue,
       images: productImagesCreate.length > 0 ? { create: productImagesCreate } : undefined,
       variants: variantsCreate && variantsCreate.length > 0 ? { create: variantsCreate } : undefined,
     },

@@ -4,6 +4,7 @@ import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default async function CategoriesPage({ params }: { params: Promise<{ storeId: string; }>; }) {
   const { storeId } = await params;
@@ -20,7 +21,7 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sto
       const s = await prisma.store.findUnique({ where: { id: storeId }, select: { settings: true } });
       const current = ((s?.settings ?? {}) as { categories?: string[]; });
       const list = Array.from(new Set([...(current.categories ?? []), name])).sort((a, b) => a.localeCompare(b));
-      await prisma.store.update({ where: { id: storeId }, data: { settings: { ...(s?.settings as any ?? {}), categories: list } } });
+      await prisma.store.update({ where: { id: storeId }, data: { settings: { ...current, categories: list } } });
     }
     return (
       <form action={action} className="flex items-center gap-2">
@@ -36,11 +37,11 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sto
       const s = await prisma.store.findUnique({ where: { id: storeId }, select: { settings: true } });
       const current = ((s?.settings ?? {}) as { categories?: string[]; });
       const list = (current.categories ?? []).filter((c) => c !== name);
-      await prisma.store.update({ where: { id: storeId }, data: { settings: { ...(s?.settings as any ?? {}), categories: list } } });
+      await prisma.store.update({ where: { id: storeId }, data: { settings: { ...current, categories: list } } });
     }
     return (
       <form action={action}>
-        <Button variant="outline" size="sm">Remove</Button>
+        <Button variant="destructive" size="sm">Remove</Button>
       </form>
     );
   }
@@ -53,14 +54,24 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sto
         {categories.length === 0 ? (
           <p className="text-sm text-muted-foreground">No categories yet.</p>
         ) : (
-          <ul className="space-y-2">
-            {categories.map((c) => (
-              <li key={c} className="flex items-center justify-between rounded border px-3 py-2 text-sm">
-                <span>{c}</span>
-                <RemoveButton name={c} />
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto rounded-md border">
+            <Table className="w-full text-sm">
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="px-2 py-2 text-left font-medium">Category</TableHead>
+                  <TableHead className="px-2 py-2 text-left font-medium">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {categories.map((c) => (
+                  <TableRow key={c} className="border-b last:border-0">
+                    <TableCell className="px-2 py-2">{c}</TableCell>
+                    <TableCell className="px-2 py-2"><RemoveButton name={c} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </div>
     </div>

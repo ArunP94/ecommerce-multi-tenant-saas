@@ -39,7 +39,7 @@ export function AdminSidebar({
   // Listen for global user updates to update instantly without a refresh
   React.useEffect(() => {
     const handler = (event: Event) => {
-      const e = event as CustomEvent<{ name?: string; image?: string | null }>;
+      const e = event as CustomEvent<{ name?: string; image?: string | null; }>;
       if (e.detail?.name !== undefined) setDisplayName(e.detail.name);
       if (e.detail?.image !== undefined) setAvatar(e.detail.image ?? undefined);
     };
@@ -47,14 +47,14 @@ export function AdminSidebar({
     return () => window.removeEventListener("user:updated", handler as EventListener);
   }, []);
 
-  const baseItems: { title: string; url: string; icon?: keyof typeof Lucide }[] = [
+  const baseItems: { title: string; url: string; icon?: keyof typeof Lucide; }[] = [
     { title: "Dashboard", url: "/admin/[storeId]", icon: "LayoutDashboard" },
   ];
-  const superAdminItems: { title: string; url: string; icon?: keyof typeof Lucide }[] = [
+  const superAdminItems: { title: string; url: string; icon?: keyof typeof Lucide; }[] = [
     { title: "Stores", url: "/admin/stores", icon: "Folder" },
     { title: "Users", url: "/admin/users", icon: "Users" },
   ];
-  const staffItems: { title: string; url: string; icon?: keyof typeof Lucide }[] = [
+  const staffItems: { title: string; url: string; icon?: keyof typeof Lucide; }[] = [
     { title: "Products", url: "/admin/[storeId]/products", icon: "ListChecks" },
     { title: "Categories", url: "/admin/[storeId]/categories", icon: "Tags" },
     { title: "Inventory", url: "/admin/[storeId]/inventory", icon: "Boxes" },
@@ -68,13 +68,13 @@ export function AdminSidebar({
     ...(role === "STORE_OWNER" || role === "STAFF" ? staffItems : []),
   ];
 
-  const companyLabel = role === "SUPER_ADMIN" ? "Platform Admin" : "My Store";
+  const companyLabel = "RunCommerce";
 
   const navSecondary = [
     { title: "Account", url: "/admin/account", icon: "Settings" },
     { title: "Help", url: "#", icon: "HelpCircle" },
     { title: "Search", url: "#", icon: "Search" },
-  ] satisfies { title: string; url: string; icon: keyof typeof Lucide }[];
+  ] satisfies { title: string; url: string; icon: keyof typeof Lucide; }[];
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

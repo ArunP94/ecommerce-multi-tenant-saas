@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller, type FieldPath } from "react-hook-form";
+import { useForm, Controller, type FieldPath, type Resolver } from "react-hook-form";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import {
@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import VariantImagesDialog from "@/components/admin/products/variant-images-dialog";
 
@@ -43,7 +44,7 @@ const ImageSchema = z.object({
 
 const VariantRowSchema = z.object({
   key: z.string(), // combination key
-  attributes: z.record(z.string()),
+  attributes: z.record(z.string(), z.string()),
   sku: z.string().min(1, "SKU is required"),
   price: z.coerce.number().nonnegative(),
   inventory: z.coerce.number().int().min(0).default(0),
@@ -117,17 +118,17 @@ function SortableImageItem({ image, onRemove, onPrimary }: { image: { id: string
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={image.url} alt="product" className="h-28 w-28 object-cover" />
       <div className="absolute inset-0 flex items-start justify-between p-1 opacity-0 group-hover:opacity-100 transition">
-        <button type="button" className="bg-white/80 rounded p-1" {...attributes} {...listeners} aria-label="Drag">
+        <Button type="button" variant="ghost" size="icon" className="bg-white/80" {...attributes} {...listeners} aria-label="Drag">
           <GripVertical className="size-4" />
-        </button>
-        <button type="button" className="bg-white/80 rounded p-1" onClick={onRemove} aria-label="Remove">
+        </Button>
+        <Button type="button" variant="ghost" size="icon" className="bg-white/80" onClick={onRemove} aria-label="Remove">
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
       <div className="absolute bottom-1 left-1 flex items-center gap-1">
-        <button type="button" onClick={onPrimary} className={`text-[10px] rounded px-1 py-0.5 ${image.isPrimary ? "bg-primary text-primary-foreground" : "bg-white/80"}`}>
+        <Button type="button" onClick={onPrimary} variant="ghost" className={`text-[10px] px-1 py-0.5 h-auto ${image.isPrimary ? "bg-primary text-primary-foreground" : "bg-white/80"}`}>
           {image.isPrimary ? "Primary" : "Make primary"}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -136,7 +137,7 @@ function SortableImageItem({ image, onRemove, onPrimary }: { image: { id: string
 export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSettings, initialValues, onSubmitOverride, }: { storeId: string; defaultCurrency?: string; storeSettings?: { currency?: string; multiCurrency?: boolean; conversionRates?: Record<string, number>; categories?: string[] }; initialValues?: Partial<ProductFormValues>; onSubmitOverride?: (values: ProductFormValues, publish: boolean) => Promise<void>; }) {
   const router = useRouter();
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(ProductFormSchema),
+    resolver: zodResolver(ProductFormSchema) as Resolver<ProductFormValues>,
     defaultValues: {
       title: "",
       sku: "",
@@ -153,7 +154,7 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
       options: initialValues?.options ?? [],
       variants: initialValues?.variants ?? [],
       ...(initialValues ?? {}),
-    } as ProductFormValues,
+    } as Partial<ProductFormValues>,
     mode: "onChange",
   });
 
@@ -339,12 +340,11 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
               sku: v.sku.trim(),
               price: v.price,
               inventory: v.inventory,
-              attributes: v.attributes,
+              attributes: { ...(v.attributes || {}), trackInventory: v.trackInventory, backorder: v.backorder },
               images: (v.images ?? []).map((img, idx) => ({ url: img.url, altText: img.altText, isPrimary: img.isPrimary ?? idx === 0, sort: idx })),
               salePrice: v.salePrice ?? undefined,
               saleStart: v.saleStart || undefined,
               saleEnd: v.saleEnd || undefined,
-              attributes: { ...(v.attributes || {}), trackInventory: v.trackInventory, backorder: v.backorder },
             }))
           : [],
       };
@@ -482,10 +482,12 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                         <span className="text-xs text-muted-foreground">Select:</span>
                         <div className="flex flex-wrap gap-2">
                           {storeSettings.categories.map((c) => (
-                            <button
+                            <Button
                               type="button"
                               key={c}
-                              className="text-xs rounded border px-2 py-1 hover:bg-muted"
+                              variant="outline"
+                              size="sm"
+                              className="text-xs px-2 py-1 h-auto"
                               onClick={() => {
                                 if (!form.getValues("categories").includes(c)) {
                                   form.setValue("categories", [...form.getValues("categories"), c]);
@@ -493,7 +495,7 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                               }}
                             >
                               {c}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </div>
@@ -507,9 +509,9 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                     {form.watch("categories").map((cat) => (
                       <span key={cat} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs">
                         {cat}
-                        <button type="button" onClick={() => removeCategory(cat)} aria-label={`Remove ${cat}`}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeCategory(cat)} aria-label={`Remove ${cat}`}>
                           <X className="size-3" />
-                        </button>
+                        </Button>
                       </span>
                     ))}
                   </div>
@@ -564,7 +566,7 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                       const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
                       if (urls.length > 0) addImages(urls);
                     }}
-                    onUploadError={(e) => toast.error(e.message || "Upload failed")}
+                    onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
                     appearance={{ container: "w-fit", button: "inline-flex items-center gap-2" as unknown as string }}
                     content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-2"><ImageIcon className="size-4" /> {ready ? "Upload images" : "Preparing…"}</span>) }}
                   />
@@ -636,9 +638,9 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                               {opt.values.map((v) => (
                                 <span key={v.id} className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs">
                                   {v.value}
-                                  <button type="button" onClick={() => removeOptionValue(opt.id, v.id)}>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeOptionValue(opt.id, v.id)}>
                                     <X className="size-3" />
-                                  </button>
+                                  </Button>
                                 </span>
                               ))}
                             </div>
@@ -652,89 +654,93 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                       {variants.length === 0 ? (
                         <div className="text-sm text-muted-foreground">Define option values to auto-generate variants.</div>
                       ) : (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm border rounded-md">
-                            <thead>
-                              <tr className="border-b bg-muted/50">
+                        <div className="overflow-x-auto rounded-md border">
+                          <Table className="w-full text-sm">
+                            <TableHeader>
+                              <TableRow className="border-b bg-muted/50">
                                 {attributeColumns.map((name) => (
-                                  <th key={name} className="px-2 py-2 text-left font-medium">{name}</th>
+                                  <TableHead key={name} className="px-2 py-2 text-left font-medium">{name}</TableHead>
                                 ))}
-                                <th className="px-2 py-2 text-left font-medium">SKU</th>
-                                <th className="px-2 py-2 text-left font-medium">Price ({form.watch("currency")})</th>
-                                <th className="px-2 py-2 text-left font-medium">Qty</th>
-                                <th className="px-2 py-2 text-left font-medium">Images</th>
-                                <th className="px-2 py-2 text-left font-medium">Track</th>
-                                <th className="px-2 py-2 text-left font-medium">Backorder</th>
-                              </tr>
-                            </thead>
-                            <tbody>
+                                <TableHead className="px-2 py-2 text-left font-medium">SKU</TableHead>
+                                <TableHead className="px-2 py-2 text-left font-medium">Price ({form.watch("currency")})</TableHead>
+                                <TableHead className="px-2 py-2 text-left font-medium">Qty</TableHead>
+                                <TableHead className="px-2 py-2 text-left font-medium">Images</TableHead>
+                                <TableHead className="px-2 py-2 text-left font-medium">Track</TableHead>
+                                <TableHead className="px-2 py-2 text-left font-medium">Backorder</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
                               {variants.map((row, idx) => (
-                                <tr key={row.key} className="border-b last:border-0">
+                                <TableRow key={row.key} className="border-b last:border-0">
                                   {attributeColumns.map((name) => (
-                                    <td key={name} className="px-2 py-2">{row.attributes?.[name]}</td>
+                                    <TableCell key={name} className="px-2 py-2">{row.attributes?.[name]}</TableCell>
                                   ))}
-                                  <td className="px-2 py-2 min-w-44">
+                                  <TableCell className="px-2 py-2 min-w-44">
                                     <Controller
                                       control={form.control}
                                       name={`variants.${idx}.sku` as unknown as FieldPath<ProductFormValues>}
-                                      render={({ field }) => <Input {...field} placeholder="SKU" />}
+                                      render={({ field }) => (
+                                        <Input placeholder="SKU" value={(field.value as string | undefined) ?? ""} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} />
+                                      )}
                                     />
-                                  </td>
-                                  <td className="px-2 py-2 min-w-36">
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2 min-w-36">
                                     <Controller
                                       control={form.control}
                                       name={`variants.${idx}.price` as unknown as FieldPath<ProductFormValues>}
-                                      render={({ field }) => <Input type="number" step="0.01" min="0" {...field} />}
+                                      render={({ field }) => (
+                                        <Input type="number" step="0.01" min="0" value={field.value === undefined || field.value === null ? "" : (field.value as number | string)} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} />
+                                      )}
                                     />
-                                  </td>
-                                  <td className="px-2 py-2 min-w-24">
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2 min-w-24">
                                     <Controller
                                       control={form.control}
                                       name={`variants.${idx}.inventory` as unknown as FieldPath<ProductFormValues>}
                                       render={({ field }) => (
-<Input type="number" step="1" min="0" {...field} disabled={!form.watch(`variants.${idx}.trackInventory` as unknown as FieldPath<ProductFormValues>)} />
+                                        <Input type="number" step="1" min="0" value={field.value === undefined || field.value === null ? "" : (field.value as number | string)} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} disabled={!Boolean(form.watch(`variants.${idx}.trackInventory` as unknown as FieldPath<ProductFormValues>))} />
                                       )}
                                     />
-                                  </td>
-                                  <td className="px-2 py-2 min-w-44">
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2 min-w-44">
                                     <div className="flex items-center gap-2">
                                       <UploadButton<OurFileRouter, "productImage">
                                         endpoint="productImage"
-onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
+                                        onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
                                           const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
                                           if (urls.length > 0) addVariantImages(idx, urls);
                                         }}
-                                        onUploadError={(e) => toast.error(e.message || "Upload failed")}
+                                        onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
                                         appearance={{ container: "w-fit", button: "inline-flex items-center gap-1 px-2 py-1 text-xs border rounded" as unknown as string }}
                                         content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-1"><ImageIcon className="size-3" /> {ready ? "Add" : "…"}</span>) }}
                                       />
-{((form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]))?.length ? (
+                                      {((form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]))?.length ? (
                                         <span className="text-xs text-muted-foreground">{(form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]).length} img</span>
                                       ) : null}
-                                      <button type="button" className="text-xs underline" onClick={() => setOpenVariantImagesIndex(idx)}>Manage</button>
-{form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>)?.length ? (
-                                        <button type="button" className="text-xs underline" onClick={() => clearVariantImages(idx)}>Clear</button>
+                                      <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setOpenVariantImagesIndex(idx)}>Manage</Button>
+                                      {(form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"])?.length ? (
+                                        <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => clearVariantImages(idx)}>Clear</Button>
                                       ) : null}
                                     </div>
-                                  </td>
-                                  <td className="px-2 py-2 min-w-24">
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2 min-w-24">
                                     <input
                                       type="checkbox"
-checked={form.watch(`variants.${idx}.trackInventory` as unknown as FieldPath<ProductFormValues>) ?? true}
-onChange={(e) => form.setValue(`variants.${idx}.trackInventory` as unknown as FieldPath<ProductFormValues>, e.target.checked)}
+                                      checked={Boolean(form.watch(`variants.${idx}.trackInventory` as unknown as FieldPath<ProductFormValues>))}
+                                      onChange={(e) => form.setValue(`variants.${idx}.trackInventory` as unknown as FieldPath<ProductFormValues>, e.target.checked)}
                                     />
-                                  </td>
-                                  <td className="px-2 py-2 min-w-24">
+                                  </TableCell>
+                                  <TableCell className="px-2 py-2 min-w-24">
                                     <input
                                       type="checkbox"
-checked={form.watch(`variants.${idx}.backorder` as unknown as FieldPath<ProductFormValues>) ?? false}
-onChange={(e) => form.setValue(`variants.${idx}.backorder` as unknown as FieldPath<ProductFormValues>, e.target.checked)}
+                                      checked={Boolean(form.watch(`variants.${idx}.backorder` as unknown as FieldPath<ProductFormValues>))}
+                                      onChange={(e) => form.setValue(`variants.${idx}.backorder` as unknown as FieldPath<ProductFormValues>, e.target.checked)}
                                     />
-                                  </td>
-                                </tr>
+                                  </TableCell>
+                                </TableRow>
                               ))}
-                            </tbody>
-                          </table>
+                            </TableBody>
+                          </Table>
                         </div>
                       )}
                     </div>

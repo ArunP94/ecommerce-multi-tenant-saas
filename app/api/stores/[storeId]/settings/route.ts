@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 const settingsSchema = z.object({
   currency: z.string().optional(),
   multiCurrency: z.boolean().optional(),
-  conversionRates: z.record(z.number()).optional(),
+  conversionRates: z.record(z.string(), z.number()).optional(),
   categories: z.array(z.string()).optional(),
 });
 
@@ -59,6 +60,6 @@ export async function PATCH(
     ...(parsed.data.categories !== undefined ? { categories: parsed.data.categories } : {}),
   };
 
-  const updated = await prisma.store.update({ where: { id: storeId }, data: { settings: next } });
+  const updated = await prisma.store.update({ where: { id: storeId }, data: { settings: next as Prisma.InputJsonValue } });
   return NextResponse.json({ settings: updated.settings });
 }

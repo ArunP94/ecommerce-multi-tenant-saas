@@ -4,7 +4,7 @@ const config: Config = {
   preset: "ts-jest",
   testEnvironment: "jsdom",
   roots: ["<rootDir>"],
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts", "<rootDir>/test/setup.ts"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts", "<rootDir>/tests/setup.ts"],
   testPathIgnorePatterns: ["/node_modules/", "<rootDir>/tests/e2e/"],
   transform: {
     "^.+\\.(t|j)sx?$": [

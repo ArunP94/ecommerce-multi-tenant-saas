@@ -5,6 +5,7 @@ import { ColumnDef, flexRender, getCoreRowModel, getFilteredRowModel, getSortedR
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
 
 export type ProductRow = {
@@ -93,32 +94,32 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
         </Select>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border rounded-md">
-          <thead>
+      <div className="overflow-x-auto rounded-md border">
+        <Table className="w-full text-sm">
+          <TableHeader>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id} className="border-b bg-muted/50">
+              <TableRow key={hg.id} className="bg-muted/50">
                 {hg.headers.map((header) => (
-                  <th key={header.id} className="px-2 py-2 text-left font-medium cursor-pointer" onClick={header.column.getToggleSortingHandler()}>
+                  <TableHead key={header.id} className="px-2 py-2 cursor-pointer" onClick={header.column.getToggleSortingHandler()}>
                     {flexRender(header.column.columnDef.header, header.getContext())}{" "}
                     {{ asc: "↑", desc: "↓" }[header.column.getIsSorted() as string] ?? null}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </thead>
-          <tbody>
+          </TableHeader>
+          <TableBody>
             {table.getRowModel().rows.map((row) => (
-              <tr key={row.id} className="border-b last:border-0">
+              <TableRow key={row.id} className="border-b last:border-0">
                 {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-2 py-2">
+                  <TableCell key={cell.id} className="px-2 py-2">
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
+                  </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
