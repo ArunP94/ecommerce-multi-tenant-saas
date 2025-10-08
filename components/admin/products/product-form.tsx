@@ -643,7 +643,7 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                     appearance={{ container: "w-fit", button: "inline-flex items-center gap-2" as unknown as string }}
                     content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-2"><ImageIcon className="size-4" /> {ready ? "Upload images" : "Preparing…"}</span>) }}
                   />
-<p className="text-xs text-muted-foreground">Drag to reorder. Click &quot;Make primary&quot; to set default image.</p>
+<p className="text-xs text-muted-foreground">{hasVariants ? "Set a Primary image used when a variant has no image. Drag to reorder." : "Drag to reorder. Click \"Make primary\" to set default image."}</p>
                 </div>
 
                 {images.length > 0 ? (
@@ -666,11 +666,11 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                 )}
               </TabsContent>
 
-              <TabsContent value="variants" className="space-y-4">
+              <TabsContent value="variants" className="space-y-4 w-full">
                 {!hasVariants ? (
 <div className="text-sm text-muted-foreground">Enable &quot;This product has variants&quot; to configure options and combinations.</div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-4 w-full">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-medium">Options</h3>
@@ -727,7 +727,7 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                       {variants.length === 0 ? (
                         <div className="text-sm text-muted-foreground">Define option values to auto-generate variants.</div>
                       ) : (
-                        <div className="overflow-x-auto rounded-md border">
+                        <div className="w-full overflow-x-auto rounded-md border">
                           <Table className="w-full text-sm">
                             <TableHeader>
                               <TableRow className="border-b bg-muted/50">
@@ -787,11 +787,27 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                                         appearance={{ container: "w-fit", button: "inline-flex items-center gap-1 px-2 py-1 text-xs border rounded" as unknown as string }}
                                         content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-1"><ImageIcon className="size-3" /> {ready ? "Add" : "…"}</span>) }}
                                       />
-                                      {((form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]))?.length ? (
-                                        <span className="text-xs text-muted-foreground">{(form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]).length} img</span>
-                                      ) : null}
+                                      {(() => {
+                                        const imgs = (form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]) || [];
+                                        return imgs.length ? (
+                                          <div className="flex items-center gap-1">
+                                            {imgs.slice(0, 2).map((im, i) => (
+                                              <div key={`${i}-${im.url}`} className="relative">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={im.url} alt="thumb" className="h-6 w-6 rounded object-cover border" />
+                                                {im.isPrimary ? (
+                                                  <span className="absolute -top-1 -right-1 rounded bg-primary text-primary-foreground text-[9px] leading-none px-0.5">P</span>
+                                                ) : null}
+                                              </div>
+                                            ))}
+                                            {imgs.length > 2 ? (
+                                              <span className="text-[10px] text-muted-foreground">+{imgs.length - 2}</span>
+                                            ) : null}
+                                          </div>
+                                        ) : null;
+                                      })()}
                                       <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setOpenVariantImagesIndex(idx)}>Manage</Button>
-                                      {(form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"])?.length ? (
+                                      {((form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]))?.length ? (
                                         <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => clearVariantImages(idx)}>Clear</Button>
                                       ) : null}
                                     </div>
