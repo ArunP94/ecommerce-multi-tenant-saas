@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 
 export type ProductRow = {
   id: string;
@@ -20,6 +24,25 @@ export type ProductRow = {
 export default function ProductsTable({ storeId, data }: { storeId: string; data: ProductRow[] }) {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string | undefined>(undefined);
+  const [confirmId, setConfirmId] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState<string | null>(null);
+  const router = useRouter();
+
+  const onDelete = React.useCallback(async (id: string) => {
+    try {
+      setBusy(id);
+      const res = await fetch(`/api/stores/${storeId}/products/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Failed to delete");
+      toast.success("Product deleted");
+      setConfirmId(null);
+      router.refresh();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
+    } finally {
+      setBusy(null);
+    }
+  }, [router, storeId]);
+
   const columns = React.useMemo<ColumnDef<ProductRow>[]>(() => [
     {
       accessorKey: "title",
@@ -50,12 +73,35 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <Button asChild size="sm" variant="outline">
-          <Link href={`/admin/${storeId}/products/${row.original.id}/edit`}>Edit</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href={`/admin/${storeId}/products/${row.original.id}/edit`}>Edit</Link>
+          </Button>
+          <Dialog open={confirmId === row.original.id} onOpenChange={(o) => setConfirmId(o ? row.original.id : null)}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="destructive" onClick={() => setConfirmId(row.original.id)}>
+                <Trash2 className="size-4 mr-1" /> Delete
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete product?</DialogTitle>
+                <DialogDescription>
+                  This action cannot be undone. This will permanently delete &quot;{row.original.title}&quot; and its variants and images.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmId(null)}>Cancel</Button>
+                <Button variant="destructive" onClick={() => onDelete(row.original.id)} disabled={busy === row.original.id}>
+                  {busy === row.original.id ? "Deleting…" : "Delete"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       ),
     },
-  ], [storeId]);
+  ], [storeId, confirmId, busy, onDelete]);
 
   const columnFilters = React.useMemo<ColumnFiltersState>(() => (statusFilter ? [{ id: "status", value: statusFilter }] : []), [statusFilter]);
 

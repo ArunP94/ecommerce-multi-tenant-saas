@@ -73,3 +73,35 @@ export async function PUT(
 
   return NextResponse.json({ product: updated });
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  context: { params: Promise<{ storeId: string; productId: string }> }
+) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const role = session.user.role;
+  const userStoreId = session.user.storeId ?? null;
+
+  const { productId } = await context.params;
+  const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true, storeId: true } });
+  if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (role !== "SUPER_ADMIN" && userStoreId !== product.storeId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  if (!(["SUPER_ADMIN", "STORE_OWNER", "STAFF"].includes(role))) {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  }
+
+  // Clean up children
+  const variants = await prisma.variant.findMany({ where: { productId }, select: { id: true } });
+  const variantIds = variants.map(v => v.id);
+  if (variantIds.length > 0) {
+    await prisma.image.deleteMany({ where: { variantId: { in: variantIds } } });
+  }
+  await prisma.image.deleteMany({ where: { productId, variantId: null } });
+  await prisma.variant.deleteMany({ where: { productId } });
+  await prisma.product.delete({ where: { id: productId } });
+
+  return NextResponse.json({ ok: true });
+}

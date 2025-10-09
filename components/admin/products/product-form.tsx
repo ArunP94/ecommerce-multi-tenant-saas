@@ -481,9 +481,9 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
                       <FormItem>
                         <FormLabel>SKU / Product code</FormLabel>
                         <FormControl>
-                          <Input placeholder="Optional" {...field} />
+                          <Input placeholder="Optional — must be unique if provided" {...field} />
                         </FormControl>
-                        <FormDescription>Must be unique if provided.</FormDescription>
+                        <FormDescription className="sr-only">Must be unique if provided.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
