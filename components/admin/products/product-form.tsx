@@ -211,6 +211,28 @@ export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSet
   const variants = form.watch("variants");
   const [openVariantImagesIndex, setOpenVariantImagesIndex] = React.useState<number | null>(null);
 
+  // Ensure options and values have stable IDs when coming from initialValues
+  useEffect(() => {
+    const opts = form.getValues("options") as unknown as Array<{ id?: string; name: string; type: "color"|"size"|"custom"; values?: Array<{ id?: string; value: string; hex?: string }> }>;
+    if (!opts || opts.length === 0) return;
+    let changed = false;
+    const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const normalized = opts.map((o, oi) => {
+      const id = o.id && o.id.length ? o.id : `opt-${oi}-${slug(o.name || "option")}-${Math.random().toString(36).slice(2,6)}`;
+      if (!o.id) changed = true;
+      const values = (o.values ?? []).map((v, vi) => {
+        const vid = v.id && v.id.length ? v.id : `optv-${oi}-${vi}-${slug(v.value || "value")}-${Math.random().toString(36).slice(2,6)}`;
+        if (!v.id) changed = true;
+        return { id: vid, value: v.value, hex: v.hex };
+        });
+      return { id, name: o.name, type: o.type, values };
+    });
+    if (changed) {
+      form.setValue("options", normalized as unknown as ProductFormValues["options"]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;

@@ -27,7 +27,7 @@ export default function InventoryTable({ storeId, initialVariants }: { storeId: 
   const [q, setQ] = React.useState("");
   const [page, setPage] = React.useState(1);
   const pageSize = 20;
-  const [groupByProduct, setGroupByProduct] = React.useState(false);
+  const [groupByProduct, setGroupByProduct] = React.useState(true);
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
 
   const filtered = React.useMemo(() => {
@@ -105,8 +105,8 @@ export default function InventoryTable({ storeId, initialVariants }: { storeId: 
         <TableBody>
           {groupByProduct && groups
             ? Object.entries(groups).map(([productTitle, list]) => (
-                <>
-                  <TableRow key={`h-${productTitle}`} className="bg-muted/40">
+                <React.Fragment key={productTitle}>
+                  <TableRow className="bg-muted/40">
                     <TableCell className="px-2 py-2 font-medium" colSpan={7}>
                       <Button variant="ghost" size="sm"
                         className="justify-start w-full"
@@ -137,7 +137,7 @@ export default function InventoryTable({ storeId, initialVariants }: { storeId: 
                     </TableRow>
                   ))
                   }
-                </>
+                </React.Fragment>
               ))
             : paged.map((r) => (
                 <TableRow key={r.id} className="border-b last:border-0">
