@@ -1,0 +1,39 @@
+/* Example brand font integration for a licensed font (replace with your files)
+   1) Put your licensed font files into /public/fonts/brand/
+      e.g.
+      - /public/fonts/brand/Brand-Regular.woff2
+      - /public/fonts/brand/Brand-Medium.woff2
+      - /public/fonts/brand/Brand-Bold.woff2
+   2) Update the src: urls below to match your files/names.
+   3) Import this file from app/layout.tsx after globals.css OR paste into globals.css.
+   4) Set :root { --font-brand: "BrandName"; } so .font-brand uses it.
+*/
+
+@font-face {
+  font-family: "BrandName";
+  src: url("/fonts/brand/Brand-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BrandName";
+  src: url("/fonts/brand/Brand-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "BrandName";
+  src: url("/fonts/brand/Brand-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* After you add real files above, set this to point .font-brand at them */
+  --font-brand: "BrandName";
+}

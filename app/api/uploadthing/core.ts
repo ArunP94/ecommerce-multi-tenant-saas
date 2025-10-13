@@ -27,6 +27,16 @@ export const ourFileRouter = {
       // to attach to a product or variant. We just return the URL here.
       return { uploadedBy: metadata.userId, url: file.url };
     }),
+  storeHero: f({ image: { maxFileCount: 1, maxFileSize: "8MB" } })
+    .middleware(async () => {
+      const session = await auth();
+      if (!session || !session.user?.id) throw new Error("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      // No immediate persistence; admin form will PATCH store settings with the returned URL
+      return { uploadedBy: metadata.userId, url: file.url };
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

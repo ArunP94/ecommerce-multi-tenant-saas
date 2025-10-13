@@ -19,7 +19,7 @@ export default async function StoresPage() {
     );
   }
 
-  const stores = await prisma.store.findMany({ select: { id: true, name: true, slug: true }, orderBy: { createdAt: "desc" } });
+  const stores = await prisma.store.findMany({ select: { id: true, name: true, slug: true, customDomain: true }, orderBy: { createdAt: "desc" } });
 
   return (
     <div className="px-4 pb-8 lg:px-6 space-y-6">
@@ -82,7 +82,7 @@ export default async function StoresPage() {
                     <TableCell className="px-2 py-2">/{s.slug}</TableCell>
                     <TableCell className="px-2 py-2">
                       <div className="flex items-center gap-2">
-                        <ViewStoreLink slug={s.slug} />
+                        <ViewStoreLink slug={s.slug} customDomain={s.customDomain} />
                         <DeleteStoreButton storeId={s.id} storeName={s.name} />
                       </div>
                     </TableCell>

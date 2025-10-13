@@ -64,7 +64,9 @@ export function AdminSidebar({
 
   const navMain = [
     ...baseItems,
-    ...(role === "SUPER_ADMIN" ? superAdminItems : []),
+    // Super admins see platform-level links and all store-scoped links (use Store Selector to target a store)
+    ...(role === "SUPER_ADMIN" ? [...superAdminItems, ...staffItems] : []),
+    // Store owners and staff see only store-scoped links
     ...(role === "STORE_OWNER" || role === "STAFF" ? staffItems : []),
   ];
 

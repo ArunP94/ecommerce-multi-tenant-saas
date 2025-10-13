@@ -10,6 +10,8 @@ export default withAuth(
   // 1) Host-based tenant routing (subdomain or custom domain)
   // Skip admin and auth/api routes
   const isAdminOrSystem = pathname.startsWith("/admin") || pathname.startsWith("/api/") || pathname.startsWith("/signin");
+  let response: NextResponse | null = null;
+
   if (!isAdminOrSystem) {
     const host = normalizeHost(req.headers.get("host") || "");
     const base = getBaseDomain();
@@ -23,7 +25,7 @@ export default withAuth(
     if (isTenantSubdomain || isCustomDomain) {
       const url = req.nextUrl.clone();
       url.pathname = `/storefront${pathname === "/" ? "" : pathname}`;
-      return NextResponse.rewrite(url);
+      response = NextResponse.rewrite(url);
     }
   }
 
@@ -36,7 +38,18 @@ export default withAuth(
     }
   }
 
-  return NextResponse.next();
+  // 3) Handle preview cookie persistence based on query (?preview=1 or ?preview=0)
+  const urlForPreview = req.nextUrl.clone();
+  const previewParam = (urlForPreview.searchParams.get("preview") || "").toLowerCase();
+  if (previewParam === "1" || previewParam === "true") {
+    if (!response) response = NextResponse.next();
+    response.cookies.set({ name: "sf_preview", value: "1", path: "/", httpOnly: false, sameSite: "lax", maxAge: 60 * 60 * 6 });
+  } else if (previewParam === "0" || previewParam === "false" || previewParam === "off" || previewParam === "clear") {
+    if (!response) response = NextResponse.next();
+    response.cookies.set({ name: "sf_preview", value: "", path: "/", expires: new Date(0) });
+  }
+
+  return response ?? NextResponse.next();
   },
   {
     callbacks: {
