@@ -21,7 +21,7 @@ export type ProductRow = {
   updatedAt: string;
 };
 
-export default function ProductsTable({ storeId, data }: { storeId: string; data: ProductRow[] }) {
+export default function ProductsTable({ storeId, data }: { storeId: string; data: ProductRow[]; }) {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string | undefined>(undefined);
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
@@ -73,7 +73,7 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
       id: "actions",
       header: "Actions",
       cell: ({ row }) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <Button asChild size="sm" variant="outline">
             <Link href={`/admin/${storeId}/products/${row.original.id}/edit`}>Edit</Link>
           </Button>
@@ -146,10 +146,16 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
             {table.getHeaderGroups().map((hg) => (
               <TableRow key={hg.id} className="bg-muted/50">
                 {hg.headers.map((header) => (
-                  <TableHead key={header.id} className="px-2 py-2 cursor-pointer" onClick={header.column.getToggleSortingHandler()}>
+                  <TableHead
+                    key={header.id}
+                    className={`px-2 py-2 cursor-pointer ${header.column.id === "actions" ? "text-right" : ""
+                      }`}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
                     {flexRender(header.column.columnDef.header, header.getContext())}{" "}
                     {{ asc: "↑", desc: "↓" }[header.column.getIsSorted() as string] ?? null}
                   </TableHead>
+
                 ))}
               </TableRow>
             ))}
