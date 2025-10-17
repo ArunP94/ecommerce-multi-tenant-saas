@@ -5,12 +5,12 @@ import { prisma } from "@/lib/prisma";
 import StoreSettingsForm from "@/components/admin/stores/settings-form";
 import StorefrontHomeForm from "@/components/admin/stores/storefront-home-form";
 
-export default async function StoreSettingsPage({ params }: { params: Promise<{ storeId: string }> }) {
+export default async function StoreSettingsPage({ params }: { params: Promise<{ storeId: string; }>; }) {
   const { storeId } = await params;
   await requireStoreAccess(storeId);
 
   const store = await prisma.store.findUnique({ where: { id: storeId }, select: { settings: true, name: true } });
-  type StoreSettings = { currency?: string; multiCurrency?: boolean; conversionRates?: Record<string, number>; home?: any };
+  type StoreSettings = { currency?: string; multiCurrency?: boolean; conversionRates?: Record<string, number>; home?: unknown; };
   const settings = ((store?.settings ?? {}) as StoreSettings);
 
   return (

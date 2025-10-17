@@ -5,7 +5,7 @@ import { extractSlugFromHost, normalizeHost } from "@/lib/domain";
 import PreviewLinkManager from "@/components/storefront/preview-utils.client";
 import { Menu, Search, Heart, User, ShoppingBag } from "lucide-react";
 
-export default async function StorefrontPage({ searchParams }: { searchParams: Promise<{ preview?: string }> }) {
+export default async function StorefrontPage({ searchParams }: { searchParams: Promise<{ preview?: string; }>; }) {
   const hdrs = await headers();
   const host = normalizeHost(hdrs.get("host") || "");
   const sp = await searchParams;
@@ -16,7 +16,7 @@ export default async function StorefrontPage({ searchParams }: { searchParams: P
 
   // Resolve store by subdomain or custom domain
   const slugFromHost = extractSlugFromHost(host);
-  let store = null as null | { id: string; slug: string; name: string; settings: any };
+  let store = null as null | { id: string; slug: string; name: string; settings: any; };
   if (slugFromHost) {
     store = await prisma.store.findUnique({ where: { slug: slugFromHost }, select: { id: true, slug: true, name: true, settings: true } });
   } else {
@@ -29,8 +29,8 @@ export default async function StorefrontPage({ searchParams }: { searchParams: P
     subtitle?: string;
     kicker?: string;
     heroImageUrl?: string;
-    ctaPrimary?: { label?: string; href?: string };
-    ctaSecondary?: { label?: string; href?: string };
+    ctaPrimary?: { label?: string; href?: string; };
+    ctaSecondary?: { label?: string; href?: string; };
     align?: "left" | "center" | "right";
   };
 

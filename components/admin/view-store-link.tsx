@@ -1,10 +1,9 @@
 "use client";
 
 import { useTransition } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-export function ViewStoreLink({ slug, customDomain }: { slug: string; customDomain?: string | null }) {
+export function ViewStoreLink({ slug, customDomain }: { slug: string; customDomain?: string | null; }) {
   const [isPending, startTransition] = useTransition();
 
   const baseDomain = process.env.NEXT_PUBLIC_PLATFORM_BASE_DOMAIN || (typeof window !== "undefined" ? window.location.hostname : "localhost");

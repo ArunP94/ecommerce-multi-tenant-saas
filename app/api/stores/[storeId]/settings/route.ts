@@ -28,7 +28,7 @@ const settingsSchema = z.object({
 
 export async function GET(
   _req: NextRequest,
-  context: { params: Promise<{ storeId: string }> }
+  context: { params: Promise<{ storeId: string; }>; }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -47,7 +47,7 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: Promise<{ storeId: string }> }
+  context: { params: Promise<{ storeId: string; }>; }
 ) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -65,7 +65,7 @@ export async function PATCH(
 
   const store = await prisma.store.findUnique({ where: { id: storeId }, select: { settings: true } });
   if (!store) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  const current = (store.settings as Record<string, any>) || {};
+  const current = (store.settings as Record<string, unknown>) || {};
 
   const mergedHome = parsed.data.home
     ? { ...(current.home ?? {}), ...parsed.data.home }

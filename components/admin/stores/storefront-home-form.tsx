@@ -10,16 +10,31 @@ import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 
 export type HomeSettings = {
-  title?: string; // optional override for store.name
+  title?: string;
   subtitle?: string;
-  kicker?: string; // small label above the title (e.g., WOMEN)
+  kicker?: string;
   heroImageUrl?: string;
-  ctaPrimary?: { label?: string; href?: string };
-  ctaSecondary?: { label?: string; href?: string };
+  ctaPrimary?: { label?: string; href?: string; };
+  ctaSecondary?: { label?: string; href?: string; };
   align?: "left" | "center" | "right";
 };
 
-export default function StorefrontHomeForm({ storeId, initial, storeName }: { storeId: string; initial: HomeSettings; storeName: string }) {
+// Define a type-safe structure for upload responses
+type UploadedFile = {
+  url?: string;
+  serverData?: { url?: string; };
+  file?: { url?: string; };
+};
+
+export default function StorefrontHomeForm({
+  storeId,
+  initial,
+  storeName,
+}: {
+  storeId: string;
+  initial: HomeSettings;
+  storeName: string;
+}) {
   const [title, setTitle] = React.useState(initial.title ?? "");
   const [subtitle, setSubtitle] = React.useState(initial.subtitle ?? "");
   const [kicker, setKicker] = React.useState(initial.kicker ?? "");
@@ -116,29 +131,31 @@ export default function StorefrontHomeForm({ storeId, initial, storeName }: { st
               <UploadButton<OurFileRouter, "storeHero">
                 endpoint="storeHero"
                 onClientUploadComplete={(files) => {
-                  try {
-                    const f = Array.isArray(files) && files.length > 0 ? files[0] : undefined;
-                    const url = (f as any)?.url ?? (f as any)?.serverData?.url ?? (f as any)?.file?.url;
-                    if (url) {
-                      setHeroUrl(url);
-                      toast.success("Hero image uploaded");
-                    } else {
-                      toast.error("Upload finished, but no URL returned");
-                    }
-                  } catch {
-                    toast.error("Upload finished, but failed to read response");
+                  const f: UploadedFile | undefined = Array.isArray(files) && files.length > 0 ? (files[0] as UploadedFile) : undefined;
+                  const url = f?.url ?? f?.serverData?.url ?? f?.file?.url;
+                  if (url) {
+                    setHeroUrl(url);
+                    toast.success("Hero image uploaded");
+                  } else {
+                    toast.error("Upload finished, but no URL returned");
                   }
                 }}
-                onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
+                onUploadError={(e) => {
+                  toast.error(e.message || "Upload failed");
+                }}
               />
             </div>
           </div>
         </div>
       </CardContent>
       <CardFooter className="gap-2">
-        <Button onClick={onSave} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+        <Button onClick={onSave} disabled={saving}>
+          {saving ? "Saving…" : "Save"}
+        </Button>
         {heroUrl && (
-          <Button type="button" variant="outline" onClick={() => setHeroUrl("")}>Remove image</Button>
+          <Button type="button" variant="outline" onClick={() => setHeroUrl("")}>
+            Remove image
+          </Button>
         )}
       </CardFooter>
     </Card>
