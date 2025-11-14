@@ -16,7 +16,7 @@ export default async function StorefrontPage({ searchParams }: { searchParams: P
 
   // Resolve store by subdomain or custom domain
   const slugFromHost = extractSlugFromHost(host);
-  let store = null as null | { id: string; slug: string; name: string; settings: any; };
+  let store = null as null | { id: string; slug: string; name: string; settings: unknown };
   if (slugFromHost) {
     store = await prisma.store.findUnique({ where: { slug: slugFromHost }, select: { id: true, slug: true, name: true, settings: true } });
   } else {
@@ -24,7 +24,7 @@ export default async function StorefrontPage({ searchParams }: { searchParams: P
   }
 
   if (!store) return notFound();
-  const home = (store.settings?.home ?? {}) as {
+  const home = ((store.settings as Record<string, unknown> | null)?.home ?? {}) as {
     title?: string;
     subtitle?: string;
     kicker?: string;
