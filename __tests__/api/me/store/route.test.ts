@@ -1,5 +1,3 @@
-import type { NextRequest } from 'next/server';
-
 jest.mock('@/lib/auth', () => ({
   auth: jest.fn(),
 }));

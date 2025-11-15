@@ -51,7 +51,7 @@ describe('/api/stores/[storeId]/products GET', () => {
     mockFindMany.mockResolvedValue([
       { id: 'p1', title: 'Product 1', storeId: 'store_1' },
     ]);
-    const req = new Request('http://localhost/api/stores/store_1/products');
+    const req = new Request('http://localhost/api/stores/store_1/products') as unknown as NextRequest;
     const res = await GET(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -66,7 +66,7 @@ describe('/api/stores/[storeId]/products GET', () => {
     mockFindMany.mockResolvedValue([
       { id: 'p1', title: 'Product 1', storeId: 'store_1' },
     ]);
-    const req = new Request('http://localhost/api/stores/store_1/products');
+    const req = new Request('http://localhost/api/stores/store_1/products') as unknown as NextRequest;
     const res = await GET(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(200);
     const json = await res.json();
@@ -90,7 +90,7 @@ describe('/api/stores/[storeId]/products POST', () => {
     const req = new Request('http://localhost/api/stores/store_1/products', {
       method: 'POST',
       body: JSON.stringify({ title: 'Product', price: 10 }),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(401);
   });
@@ -102,7 +102,7 @@ describe('/api/stores/[storeId]/products POST', () => {
     const req = new Request('http://localhost/api/stores/store_1/products', {
       method: 'POST',
       body: JSON.stringify({ title: 'Product', price: 10 }),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(403);
   });
@@ -114,7 +114,7 @@ describe('/api/stores/[storeId]/products POST', () => {
     const req = new Request('http://localhost/api/stores/store_1/products', {
       method: 'POST',
       body: JSON.stringify({}),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -132,7 +132,7 @@ describe('/api/stores/[storeId]/products POST', () => {
         hasVariants: false,
         images: [{ url: 'http://example.com/image.jpg' }],
       }),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -151,7 +151,7 @@ describe('/api/stores/[storeId]/products POST', () => {
         variants: [],
         images: [{ url: 'http://example.com/image.jpg' }],
       }),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -169,7 +169,7 @@ describe('/api/stores/[storeId]/products POST', () => {
         price: 10,
         hasVariants: false,
       }),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -188,7 +188,7 @@ describe('/api/stores/[storeId]/products POST', () => {
         hasVariants: false,
         images: [{ url: 'http://example.com/image.jpg' }],
       }),
-    });
+    }) as unknown as NextRequest;
     const res = await POST(req, { params: Promise.resolve({ storeId: 'store_1' }) });
     expect(res.status).toBe(201);
     const json = await res.json();

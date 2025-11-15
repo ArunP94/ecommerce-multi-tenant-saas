@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { z } from "zod";
@@ -27,7 +27,7 @@ const settingsSchema = z.object({
 });
 
 export async function GET(
-  _req: NextRequest,
+  _req: Request,
   context: { params: Promise<{ storeId: string; }>; }
 ) {
   const session = await auth();
@@ -46,7 +46,7 @@ export async function GET(
 }
 
 export async function PATCH(
-  req: NextRequest,
+  req: Request,
   context: { params: Promise<{ storeId: string; }>; }
 ) {
   const session = await auth();
