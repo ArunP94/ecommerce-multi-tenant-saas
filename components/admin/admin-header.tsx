@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { StoreSelector } from "@/components/admin/store-selector";
 import { PanelLeftIcon } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export function SiteHeader({
   role,
@@ -19,21 +20,28 @@ export function SiteHeader({
   storeDomains: Record<string, { slug: string; customDomain: string | null }>;
   baseDomain: string;
 }) {
-  function buildUrl(): string | null {
+  const [viewHref, setViewHref] = useState<string | null>(null);
+
+  useEffect(() => {
     const effectiveStoreId = currentStoreId ?? (stores[0]?.id ?? null);
-    if (!effectiveStoreId) return null;
+    if (!effectiveStoreId) {
+      setViewHref(null);
+      return;
+    }
     const meta = storeDomains[effectiveStoreId];
-    if (!meta) return null;
-    const port = typeof window !== "undefined" && window.location.port ? `:${window.location.port}` : "";
-    const protocol = typeof window !== "undefined" ? window.location.protocol : "http:";
+    if (!meta) {
+      setViewHref(null);
+      return;
+    }
+    const port = window.location.port ? `:${window.location.port}` : "";
+    const protocol = window.location.protocol;
     const isLocalBase = baseDomain === "localhost" || baseDomain.endsWith(".localhost");
     if (meta.customDomain && !isLocalBase) {
-      return `${protocol}//${meta.customDomain}?preview=1`;
+      setViewHref(`${protocol}//${meta.customDomain}?preview=1`);
+    } else {
+      setViewHref(`${protocol}//${meta.slug}.${baseDomain}${port}?preview=1`);
     }
-    return `${protocol}//${meta.slug}.${baseDomain}${port}?preview=1`;
-  }
-
-  const viewHref = buildUrl();
+  }, [currentStoreId, stores, storeDomains, baseDomain]);
 
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear py-2">

@@ -311,7 +311,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
 ]
 
-function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
+const DraggableRowComponent = React.memo(function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
     id: row.original.id,
   })
@@ -334,7 +334,9 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
       ))}
     </TableRow>
   )
-}
+})
+
+const DraggableRow = DraggableRowComponent
 
 function DataTableContent({
   data: initialData,

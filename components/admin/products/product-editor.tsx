@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import ProductForm, { type ProductFormValues } from "@/components/admin/products/product-form";
+import { ProductFormWrapper } from "@/components/admin/products/product-form-wrapper";
+import type { ProductFormValues } from "@/components/admin/products/product-form";
 import { toast } from "sonner";
 
 // A lightweight editor wrapper that reuses ProductForm shape and submits to the full replace API.
@@ -109,7 +110,7 @@ const res = await fetch(`/api/stores/${storeId}/products/${(product as { id: str
 
   return (
     <div className="space-y-4">
-      <ProductForm
+      <ProductFormWrapper
         storeId={storeId}
         defaultCurrency={initial.currency}
         storeSettings={{ currency: initial.currency }}

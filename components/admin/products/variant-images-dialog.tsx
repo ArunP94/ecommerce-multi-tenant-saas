@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -23,8 +24,14 @@ function SortableThumb({ item, onRemove, onPrimary, onAltChange }: {
   const style: React.CSSProperties = { transform: CSS.Transform.toString(transform), transition };
   return (
     <div ref={setNodeRef} style={style} className="group rounded-md border p-2">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={item.url} alt={item.altText || "variant"} className="h-24 w-full object-cover rounded" />
+      <Image
+        src={item.url}
+        alt={item.altText || "variant"}
+        width={400}
+        height={96}
+        className="h-24 w-full object-cover rounded"
+        sizes="(max-width: 640px) 100vw, 400px"
+      />
       <div className="mt-2 flex items-center gap-2">
         <Button type="button" variant="secondary" size="icon" className="rounded p-1 size-6" {...attributes} {...listeners} aria-label="Drag">
           <GripVertical className="size-4" />

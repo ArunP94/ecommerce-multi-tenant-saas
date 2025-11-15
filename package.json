@@ -37,6 +37,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tabler/icons-react": "^3.35.0",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.12",
     "@uploadthing/react": "^7.1.0",
     "@upstash/redis": "^1.30.1",
     "bcryptjs": "^2.4.3",

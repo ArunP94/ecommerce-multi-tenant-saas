@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
-import ProductForm from "@/components/admin/products/product-form";
+import { ProductFormWrapper } from "@/components/admin/products/product-form-wrapper";
 
 export default async function NewProductPage({ params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = await params;
@@ -19,7 +19,7 @@ export default async function NewProductPage({ params }: { params: Promise<{ sto
         <h1 className="text-2xl font-semibold">Create product</h1>
         <p className="text-sm text-muted-foreground">Store: {storeName}</p>
       </div>
-      <ProductForm storeId={storeId} defaultCurrency={currency} storeSettings={settings} />
+      <ProductFormWrapper storeId={storeId} defaultCurrency={currency} storeSettings={settings} />
     </div>
   );
 }

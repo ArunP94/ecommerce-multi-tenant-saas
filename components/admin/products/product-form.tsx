@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -116,8 +117,14 @@ const SortableImageItem = React.memo(function SortableImageItem({ image, onRemov
   };
   return (
     <div ref={setNodeRef} style={style} className="group relative overflow-hidden rounded-md border">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={image.url} alt="product" className="h-28 w-28 object-cover" />
+      <Image
+        src={image.url}
+        alt="product"
+        width={112}
+        height={112}
+        className="h-28 w-28 object-cover"
+        sizes="(max-width: 640px) 80px, 112px"
+      />
       <div className="absolute inset-0 flex items-start justify-between p-1 opacity-0 group-hover:opacity-100 transition">
         <Button type="button" variant="ghost" size="icon" className="bg-white/80" {...attributes} {...listeners} aria-label="Drag">
           <GripVertical className="size-4" />
@@ -156,7 +163,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
       variants: initialValues?.variants ?? [],
       ...(initialValues ?? {}),
     } as Partial<ProductFormValues>,
-    mode: "onChange",
+    mode: "onBlur",
   });
 
   const [categoryInput, setCategoryInput] = useState("");
@@ -815,8 +822,14 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                                           <div className="flex items-center gap-1">
                                             {imgs.slice(0, 2).map((im, i) => (
                                               <div key={`${i}-${im.url}`} className="relative">
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={im.url} alt="thumb" className="h-6 w-6 rounded object-cover border" />
+                                                <Image
+                                                  src={im.url}
+                                                  alt="thumb"
+                                                  width={24}
+                                                  height={24}
+                                                  className="h-6 w-6 rounded object-cover border"
+                                                  sizes="24px"
+                                                />
                                                 {im.isPrimary ? (
                                                   <span className="absolute -top-1 -right-1 rounded bg-primary text-primary-foreground text-[9px] leading-none px-0.5">P</span>
                                                 ) : null}

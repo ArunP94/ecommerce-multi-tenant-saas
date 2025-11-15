@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -120,10 +121,15 @@ export default function StorefrontHomeForm({
           <div className="md:col-span-3">
             <div className="space-y-2">
               <Label>Hero image</Label>
-              <div className="aspect-[16/9] w-full overflow-hidden rounded-md border bg-muted">
+              <div className="aspect-[16/9] w-full overflow-hidden rounded-md border bg-muted relative">
                 {heroUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={heroUrl} alt="Hero" className="h-full w-full object-cover" />
+                  <Image
+                    src={heroUrl}
+                    alt="Hero"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 1200px"
+                  />
                 ) : (
                   <div className="h-full w-full grid place-items-center text-sm text-muted-foreground">No image selected</div>
                 )}
