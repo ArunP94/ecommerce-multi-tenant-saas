@@ -336,7 +336,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
   )
 }
 
-export function DataTable({
+function DataTableContent({
   data: initialData,
 }: {
   data: z.infer<typeof schema>[]
@@ -805,3 +805,6 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
     </Drawer>
   )
 }
+
+export const DataTable = React.memo(DataTableContent);
+DataTable.displayName = "DataTable";

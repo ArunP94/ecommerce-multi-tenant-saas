@@ -6,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { getStatusConfig, cn } from "@/lib/utils";
 
 export type ProductRow = {
   id: string;
@@ -21,7 +23,7 @@ export type ProductRow = {
   updatedAt: string;
 };
 
-export default function ProductsTable({ storeId, data }: { storeId: string; data: ProductRow[]; }) {
+function ProductsTableContent({ storeId, data }: { storeId: string; data: ProductRow[]; }) {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string | undefined>(undefined);
   const [confirmId, setConfirmId] = React.useState<string | null>(null);
@@ -62,7 +64,11 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => row.original.status || "DRAFT",
+      cell: ({ row }) => {
+        const status = (row.original.status || "DRAFT") as keyof typeof import("@/lib/utils").statusConfig;
+        const config = getStatusConfig(status);
+        return <Badge className={cn(config.bg, config.text, "border-0")}>{config.label}</Badge>;
+      },
     },
     {
       accessorKey: "updatedAt",
@@ -74,13 +80,13 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
       header: "Actions",
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button asChild size="sm" variant="outline">
+          <Button asChild size="sm" variant="outline" className="h-9 px-3">
             <Link href={`/admin/${storeId}/products/${row.original.id}/edit`}>Edit</Link>
           </Button>
           <Dialog open={confirmId === row.original.id} onOpenChange={(o) => setConfirmId(o ? row.original.id : null)}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="destructive" onClick={() => setConfirmId(row.original.id)}>
-                <Trash2 className="size-4 mr-1" /> Delete
+              <Button size="sm" variant="destructive" className="h-9 px-3" onClick={() => setConfirmId(row.original.id)}>
+                <Trash2 className="size-4" />
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -176,3 +182,8 @@ export default function ProductsTable({ storeId, data }: { storeId: string; data
     </div>
   );
 }
+
+const ProductsTable = React.memo(ProductsTableContent);
+ProductsTable.displayName = "ProductsTable";
+
+export default ProductsTable;

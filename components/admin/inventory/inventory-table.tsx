@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 type VariantRowIn = { id: string; sku: string; price: number; inventory: number; attributes: unknown; product: { title: string } }[];
 
-export default function InventoryTable({ storeId, initialVariants }: { storeId: string; initialVariants: VariantRowIn }) {
+function InventoryTableContent({ storeId, initialVariants }: { storeId: string; initialVariants: VariantRowIn }) {
   const [rows, setRows] = React.useState(() => initialVariants.map(v => {
     const attrs = (v.attributes ?? null) as Record<string, unknown> | null;
     const trackInventory = attrs && typeof attrs["trackInventory"] === "boolean" ? (attrs["trackInventory"] as boolean) : true;
@@ -173,3 +173,8 @@ export default function InventoryTable({ storeId, initialVariants }: { storeId: 
     </div>
   );
 }
+
+const InventoryTable = React.memo(InventoryTableContent);
+InventoryTable.displayName = "InventoryTable";
+
+export default InventoryTable;

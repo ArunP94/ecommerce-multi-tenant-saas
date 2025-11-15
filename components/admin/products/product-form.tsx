@@ -108,7 +108,7 @@ function makeComboKey(attrs: Record<string, string>): string {
 }
 
 // Sortable image item
-function SortableImageItem({ image, onRemove, onPrimary }: { image: { id: string; url: string; isPrimary?: boolean }; onRemove: () => void; onPrimary: () => void }) {
+const SortableImageItem = React.memo(function SortableImageItem({ image, onRemove, onPrimary }: { image: { id: string; url: string; isPrimary?: boolean }; onRemove: () => void; onPrimary: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: image.id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -133,9 +133,9 @@ function SortableImageItem({ image, onRemove, onPrimary }: { image: { id: string
       </div>
     </div>
   );
-}
+});
 
-export default function ProductForm({ storeId, defaultCurrency = "GBP", storeSettings, initialValues, onSubmitOverride, }: { storeId: string; defaultCurrency?: string; storeSettings?: { currency?: string; multiCurrency?: boolean; conversionRates?: Record<string, number>; categories?: string[] }; initialValues?: Partial<ProductFormValues>; onSubmitOverride?: (values: ProductFormValues, publish: boolean) => Promise<void>; }) {
+function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, initialValues, onSubmitOverride, }: { storeId: string; defaultCurrency?: string; storeSettings?: { currency?: string; multiCurrency?: boolean; conversionRates?: Record<string, number>; categories?: string[] }; initialValues?: Partial<ProductFormValues>; onSubmitOverride?: (values: ProductFormValues, publish: boolean) => Promise<void>; }) {
   const router = useRouter();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(ProductFormSchema) as Resolver<ProductFormValues>,
@@ -981,3 +981,8 @@ onChange={(next) => {
     </Card>
   );
 }
+
+const ProductForm = React.memo(ProductFormContent);
+ProductForm.displayName = "ProductForm";
+
+export default ProductForm;
