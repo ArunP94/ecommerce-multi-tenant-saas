@@ -48,8 +48,8 @@ export function FABMenu({ actions, position = "bottom-right", mainLabel = "Menu"
     return cn(
       "absolute whitespace-nowrap text-xs font-semibold bg-primary text-primary-foreground px-3 py-1.5 rounded-md shadow-lg pointer-events-none",
       isBottomRight
-        ? "-translate-x-full -translate-y-1/2 right-full top-1/2 mr-2"
-        : "-translate-y-1/2 left-full top-1/2 ml-2"
+        ? "-translate-x-full -translate-y-1/2 right-full top-1/2 mr-1"
+        : "-translate-y-1/2 left-full top-1/2 ml-1"
     );
   };
 
