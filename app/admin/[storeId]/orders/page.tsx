@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
-import { OrdersPageClient } from "@/components/admin/orders/orders-page-client";
+import { OrdersPageClient } from "@/components/domain/admin/orders/orders-page-client";
 
 export default async function StoreOrdersPage({ params }: { params: Promise<{ storeId: string; }>; }) {
   const { storeId } = await params;

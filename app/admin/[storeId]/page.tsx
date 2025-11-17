@@ -1,10 +1,10 @@
 export const dynamic = "force-dynamic";
 
 import { requireStoreAccess } from "@/lib/require-store";
-import { SectionCards } from "@/components/admin/section-cards";
-import { ChartAreaInteractive } from "@/components/admin/chart-area-interactive";
+import { SectionCards } from "@/components/domain/admin/section-cards";
+import { ChartAreaInteractive } from "@/components/domain/admin/chart-area-interactive";
 import data from "@/app/admin/data.json";
-import { DataTable } from "@/components/admin/data-table";
+import { DataTable } from "@/components/domain/admin/data-table";
 
 export default async function StoreDashboard({ params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = await params;

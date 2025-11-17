@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { AdminSidebar } from '@/components/admin/admin-sidebar';
+import { AdminSidebar } from '@/components/domain/admin/admin-sidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 jest.mock('next/navigation', () => ({

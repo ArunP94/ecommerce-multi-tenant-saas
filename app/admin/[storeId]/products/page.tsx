@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import ProductsTable from "@/components/admin/products/products-table";
-import { ProductsPageClient } from "@/components/admin/products/products-page-client";
+import ProductsTable from "@/components/domain/admin/products/products-table";
+import { ProductsPageClient } from "@/components/domain/admin/products/products-page-client";
 
 export default async function StoreProductsPage({ params, searchParams }: { params: Promise<{ storeId: string; }>; searchParams: Promise<{ q?: string; page?: string }> }) {
   const { storeId } = await params;

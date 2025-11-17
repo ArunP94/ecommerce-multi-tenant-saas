@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react"
-import { DeleteStoreButton } from "@/components/admin/delete-store-button"
+import { DeleteStoreButton } from "@/components/domain/admin/delete-store-button"
 
 // mock fetch
 const originalFetch = global.fetch

@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { headers, cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { extractSlugFromHost, normalizeHost } from "@/lib/domain";
-import PreviewLinkManager from "@/components/storefront/preview-utils.client";
-import { StorefrontHeader } from "@/components/storefront/storefront-header";
+import PreviewLinkManager from "@/components/domain/storefront/preview-utils.client";
+import { StorefrontHeader } from "@/components/domain/storefront/storefront-header";
 
 export default async function StorefrontPage({ searchParams }: { searchParams: Promise<{ preview?: string; }>; }) {
   const hdrs = await headers();
