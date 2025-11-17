@@ -1,7 +1,5 @@
-import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { SiteHeader } from "@/components/admin/admin-header";
+import { AdminSidebar, SiteHeader, SidebarToggleBridge } from "@/components/domain/admin";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { SidebarToggleBridge } from "@/components/admin/sidebar-toggle-bridge";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";

@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
-import StoreSettingsForm from "@/components/admin/stores/settings-form";
-import StorefrontHomeForm from "@/components/admin/stores/storefront-home-form";
+import StoreSettingsForm from "@/components/domain/admin/stores/settings-form";
+import StorefrontHomeForm from "@/components/domain/admin/stores/storefront-home-form";
 
 export default async function StoreSettingsPage({ params }: { params: Promise<{ storeId: string; }>; }) {
   const { storeId } = await params;

@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 
 import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
-import InventoryTable from "@/components/admin/inventory/inventory-table";
-import { InventoryPageClient } from "@/components/admin/inventory/inventory-page-client";
+import InventoryTable from "@/components/domain/admin/inventory/inventory-table";
+import { InventoryPageClient } from "@/components/domain/admin/inventory/inventory-page-client";
 
 export default async function InventoryPage({ params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = await params;

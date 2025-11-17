@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
-import ProductEditor from "@/components/admin/products/product-editor";
+import ProductEditor from "@/components/domain/admin/products/product-editor";
 
 export default async function EditProductPage({ params }: { params: Promise<{ storeId: string; productId: string }> }) {
   const { storeId, productId } = await params;

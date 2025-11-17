@@ -1,13 +1,13 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { DeleteStoreButton } from "@/components/admin/delete-store-button";
-import { CreateStoreForm } from "@/components/admin/forms/create-store-form";
-import { ViewStoreLink } from "@/components/admin/view-store-link";
+import { DeleteStoreButton } from "@/components/domain/admin/delete-store-button";
+import { CreateStoreForm } from "@/components/domain/forms/create-store-form";
+import { ViewStoreLink } from "@/components/domain/admin/view-store-link";
 import { ClientOnly } from "@/components/core/client-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StoresPageClient } from "@/components/admin/stores/stores-page-client";
+import { StoresPageClient } from "@/components/domain/admin/stores/stores-page-client";
 
 export default async function StoresPage() {
   const session = await auth();

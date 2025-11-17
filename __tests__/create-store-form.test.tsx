@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react"
-import { CreateStoreForm } from "@/components/admin/forms/create-store-form"
+import { CreateStoreForm } from "@/components/domain/forms/create-store-form"
 
 // mock fetch
 const originalFetch = global.fetch

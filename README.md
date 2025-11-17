@@ -91,3 +91,56 @@ MAIL_PORT=2525
 MAIL_USER={{MAILTRAP_USERNAME}}
 MAIL_PASS={{MAILTRAP_PASSWORD}}
 ```
+
+## Component Architecture
+
+The codebase uses a modular component architecture for reusability and maintainability. See [COMPONENT_INVENTORY.md](./COMPONENT_INVENTORY.md) for the complete catalog.
+
+### Component Structure
+
+```
+components/
+├── ui/             # Shadcn UI primitives (buttons, inputs, cards)
+├── primitives/     # Layout building blocks (PageHeader, MetricCard, StatusBadge)
+├── patterns/       # Composed reusables (DataTable, ConfirmationDialog)
+├── domain/         # Business-specific compositions
+│   ├── admin/      # Admin panel components
+│   ├── forms/      # Form components and field wrappers
+│   └── storefront/ # Storefront components
+└── core/           # Framework utilities
+```
+
+### Import Conventions
+
+Prefer barrel imports for clean, discoverable code:
+
+```tsx
+// ✅ Good - use barrel exports
+import { PageHeader, MetricCard } from "@/components/primitives";
+import { DataTable, ConfirmationDialog } from "@/components/patterns";
+import { FormInput, FormSelect } from "@/components/domain/forms";
+
+// ❌ Avoid - deep imports
+import { PageHeader } from "@/components/primitives/page-header";
+import { FormInput } from "@/components/domain/forms/fields/form-input";
+```
+
+### Conventions
+
+**Spacing:**
+- Use `PageSection` for page-level wrappers (default `space-y-4`)
+- Use `space-y-3` for tight groups, `space-y-6` for major sections
+
+**Loading States:**
+- Page-level: Use `loading.tsx` files with Skeleton components
+- Button-level: Disable + "Processing..." label
+- Form-level: Use `isPending` state from hooks
+
+**Error Handling:**
+- User actions: `toast.error()` from sonner + preserve form state
+- API errors: Extract `.error` from response JSON; fallback to generic message
+- Validation: react-hook-form displays inline via FormMessage
+
+**Status Colors:**
+- Always use `StatusBadge` component (sources `lib/utils` statusConfig)
+- Do not hardcode status colors inline

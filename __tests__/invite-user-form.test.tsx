@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { InviteUserForm } from "@/components/admin/forms/invite-user-form";
+import { InviteUserForm } from "@/components/domain/forms/invite-user-form";
 
 const originalFetch = global.fetch;
 
