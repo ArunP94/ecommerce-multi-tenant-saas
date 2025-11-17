@@ -1,10 +1,11 @@
 import nodemailer from "nodemailer";
+import { env } from "@/lib/config/env";
 
 export function createMailer() {
-  const host = process.env.MAIL_HOST;
-  const port = parseInt(process.env.MAIL_PORT || "0", 10);
-  const user = process.env.MAIL_USER;
-  const pass = process.env.MAIL_PASS;
+  const host = env.MAIL_HOST;
+  const port = env.MAIL_PORT;
+  const user = env.MAIL_USER;
+  const pass = env.MAIL_PASS;
   if (!host || !port || !user || !pass) return null;
   return nodemailer.createTransport({ host, port, auth: { user, pass } });
 }

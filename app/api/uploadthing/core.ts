@@ -1,6 +1,7 @@
 import { createUploadthing, type FileRouter } from "uploadthing/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { rateLimit } from "@/lib/redis";
 
 const f = createUploadthing();
 
@@ -9,10 +10,15 @@ export const ourFileRouter = {
     .middleware(async () => {
       const session = await auth();
       if (!session || !session.user?.id) throw new Error("Unauthorized");
+
+      const limiterResult = await rateLimit(`upload:avatar:${session.user.id}`, 10, 3600);
+      if (!limiterResult.allowed) {
+        throw new Error("Rate limit exceeded for avatar uploads");
+      }
+
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // Persist avatar URL to user.image
       await prisma.user.update({ where: { id: metadata.userId }, data: { image: file.url } });
       return { uploadedBy: metadata.userId, url: file.url };
     }),
@@ -20,21 +26,30 @@ export const ourFileRouter = {
     .middleware(async () => {
       const session = await auth();
       if (!session || !session.user?.id) throw new Error("Unauthorized");
+
+      const limiterResult = await rateLimit(`upload:product:${session.user.id}`, 50, 3600);
+      if (!limiterResult.allowed) {
+        throw new Error("Rate limit exceeded for product image uploads");
+      }
+
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // For product images, we don't persist immediately. The client will call /api/uploads
-      // to attach to a product or variant. We just return the URL here.
       return { uploadedBy: metadata.userId, url: file.url };
     }),
   storeHero: f({ image: { maxFileCount: 1, maxFileSize: "8MB" } })
     .middleware(async () => {
       const session = await auth();
       if (!session || !session.user?.id) throw new Error("Unauthorized");
+
+      const limiterResult = await rateLimit(`upload:hero:${session.user.id}`, 10, 3600);
+      if (!limiterResult.allowed) {
+        throw new Error("Rate limit exceeded for store hero uploads");
+      }
+
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      // No immediate persistence; admin form will PATCH store settings with the returned URL
       return { uploadedBy: metadata.userId, url: file.url };
     }),
 } satisfies FileRouter;
