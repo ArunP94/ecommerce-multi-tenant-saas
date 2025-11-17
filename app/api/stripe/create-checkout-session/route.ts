@@ -1,25 +1,10 @@
 import { stripe } from "@/lib/stripe";
-import { z } from "zod";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { env } from "@/lib/config/env";
 import { rateLimit } from "@/lib/redis";
+import { checkoutSessionSchema } from "@/lib/validation/api-schemas";
 
 export const runtime = "nodejs";
-
-const bodySchema = z.object({
-  storeId: z.string(),
-  orderId: z.string().optional(),
-  currency: z.string().default("usd"),
-  items: z
-    .array(
-      z.object({
-        name: z.string(),
-        price: z.number().positive(),
-        quantity: z.number().int().positive(),
-      })
-    )
-    .min(1),
-});
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +16,7 @@ export async function POST(req: Request) {
     }
 
     const json = await req.json().catch(() => ({}));
-    const parsed = bodySchema.safeParse(json);
+    const parsed = checkoutSessionSchema.safeParse(json);
     if (!parsed.success) {
       return ApiResponse.validationError(parsed.error);
     }

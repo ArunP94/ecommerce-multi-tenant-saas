@@ -1,30 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { requireStoreAccess, handleAuthError } from "@/lib/api/auth-middleware";
-
-const ctaSchema = z.object({ label: z.string().min(1), href: z.string().url() }).partial();
-const homeSchema = z
-  .object({
-    title: z.string().optional(), // optional override; defaults to store.name
-    subtitle: z.string().optional(),
-    kicker: z.string().optional(), // small label above the title (e.g., WOMEN)
-    heroImageUrl: z.string().url().optional(),
-    ctaPrimary: ctaSchema.optional(),
-    ctaSecondary: ctaSchema.optional(),
-    // layout knobs kept very light for now
-    align: z.enum(["left", "center", "right"]).optional(),
-  })
-  .partial();
-
-const settingsSchema = z.object({
-  currency: z.string().optional(),
-  multiCurrency: z.boolean().optional(),
-  conversionRates: z.record(z.string(), z.number()).optional(),
-  categories: z.array(z.string()).optional(),
-  home: homeSchema.optional(),
-});
+import { settingsSchema } from "@/lib/validation/api-schemas";
 
 export async function GET(
   _req: Request,

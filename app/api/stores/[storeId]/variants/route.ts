@@ -1,27 +1,23 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireStoreAccess, handleAuthError } from "@/lib/api/auth-middleware";
+import { ApiResponse } from "@/lib/api/response-factory";
 
 export async function GET(
   _req: Request,
   context: { params: Promise<{ storeId: string }> }
 ) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const { storeId } = await context.params;
+    await requireStoreAccess(storeId);
 
-  const { storeId } = await context.params;
-  if (role !== "SUPER_ADMIN" && userStoreId !== storeId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const variants = await prisma.variant.findMany({
+      where: { product: { storeId } },
+      include: { product: { select: { id: true, title: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return ApiResponse.success({ variants });
+  } catch (error) {
+    return handleAuthError(error);
   }
-
-  // List variants for a store with product title
-  const variants = await prisma.variant.findMany({
-    where: { product: { storeId } },
-    include: { product: { select: { id: true, title: true } } },
-    orderBy: { createdAt: "desc" },
-  });
-
-  return NextResponse.json({ variants });
 }

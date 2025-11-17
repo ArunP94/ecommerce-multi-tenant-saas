@@ -1,25 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireSuperAdmin, handleAuthError } from "@/lib/api/auth-middleware";
+import { ApiResponse } from "@/lib/api/response-factory";
 
 export async function DELETE(_req: NextRequest, context: { params: Promise<{ storeId: string }> }) {
-  const session = await auth();
-  if (!session || session.user.role !== "SUPER_ADMIN") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  try {
+    await requireSuperAdmin();
 
-  const { storeId } = await context.params;
-  // Consider cascading deletes or soft-deletes in real apps.
-  const store = await prisma.store.findUnique({ where: { id: storeId } });
-  if (!store) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
+    const { storeId } = await context.params;
+    const store = await prisma.store.findUnique({ where: { id: storeId } });
+    if (!store) {
+      return ApiResponse.notFound("Store not found");
+    }
 
-  await prisma.store.delete({ where: { id: storeId } });
-  return NextResponse.json({ ok: true });
+    await prisma.store.delete({ where: { id: storeId } });
+    return ApiResponse.success({ ok: true });
+  } catch (error) {
+    return handleAuthError(error);
+  }
 }
 
-// Method override via POST with _method=DELETE for HTML forms
 export async function POST(req: NextRequest, context: { params: Promise<{ storeId: string }> }) {
   const contentType = req.headers.get('content-type') || '';
   let methodOverride = '';
@@ -33,5 +33,5 @@ export async function POST(req: NextRequest, context: { params: Promise<{ storeI
     return DELETE(new Request(req.url, { method: 'DELETE' }) as unknown as NextRequest, context);
   }
 
-  return NextResponse.json({ error: 'Unsupported' }, { status: 400 });
+  return ApiResponse.badRequest('Unsupported method override');
 }

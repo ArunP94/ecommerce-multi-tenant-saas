@@ -1,18 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { z } from "zod";
 import crypto from "node:crypto";
 import { sendMail } from "@/lib/mail";
 import { inviteEmail } from "@/lib/email-templates";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { rateLimit } from "@/lib/redis";
 import { env } from "@/lib/config/env";
-
-const inviteSchema = z.object({
-  email: z.string().email(),
-  role: z.enum(["STORE_OWNER", "STAFF"]),
-  storeId: z.string(),
-});
+import { inviteUserSchema } from "@/lib/validation/api-schemas";
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +21,7 @@ export async function POST(req: Request) {
     }
 
     const json = await req.json().catch(() => ({}));
-    const parsed = inviteSchema.safeParse(json);
+    const parsed = inviteUserSchema.safeParse(json);
     if (!parsed.success) {
       return ApiResponse.validationError(parsed.error);
     }

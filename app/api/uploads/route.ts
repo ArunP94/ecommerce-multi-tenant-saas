@@ -1,53 +1,47 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
-import { z } from "zod";
-
-const bodySchema = z.object({
-  url: z.string().url(),
-  altText: z.string().optional(),
-  metadata: z.any().optional(),
-  productId: z.string().optional(),
-  variantId: z.string().optional(),
-});
+import { requireAuth, handleAuthError } from "@/lib/api/auth-middleware";
+import { ApiResponse } from "@/lib/api/response-factory";
+import { uploadImageSchema } from "@/lib/validation/api-schemas";
 
 export async function POST(req: Request) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const session = await requireAuth();
+    const role = session.user.role;
+    const userStoreId = session.user.storeId ?? null;
 
-  const json = await req.json();
-  const parsed = bodySchema.safeParse(json);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
+    const json = await req.json();
+    const parsed = uploadImageSchema.safeParse(json);
+    if (!parsed.success) return ApiResponse.validationError(parsed.error);
 
-  const { url, altText, metadata, productId, variantId } = parsed.data;
+    const { url, altText, metadata, productId, variantId } = parsed.data;
 
-  // Tenant enforcement if attaching to product/variant
-  if (productId) {
-    const product = await prisma.product.findUnique({ where: { id: productId } });
-    if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    if (role !== "SUPER_ADMIN" && userStoreId !== product.storeId)
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (productId) {
+      const product = await prisma.product.findUnique({ where: { id: productId } });
+      if (!product) return ApiResponse.notFound("Product not found");
+      if (role !== "SUPER_ADMIN" && userStoreId !== product.storeId)
+        return ApiResponse.forbidden();
+    }
+    if (variantId) {
+      const variant = await prisma.variant.findUnique({ where: { id: variantId } });
+      if (!variant) return ApiResponse.notFound("Variant not found");
+      const product = await prisma.product.findUnique({ where: { id: variant.productId } });
+      if (!product) return ApiResponse.notFound("Product not found");
+      if (role !== "SUPER_ADMIN" && userStoreId !== product.storeId)
+        return ApiResponse.forbidden();
+    }
+
+    const image = await prisma.image.create({
+      data: {
+        url,
+        altText,
+        metadata,
+        productId: productId ?? null,
+        variantId: variantId ?? null,
+      },
+    });
+
+    return ApiResponse.created({ image });
+  } catch (error) {
+    return handleAuthError(error);
   }
-  if (variantId) {
-    const variant = await prisma.variant.findUnique({ where: { id: variantId } });
-    if (!variant) return NextResponse.json({ error: "Variant not found" }, { status: 404 });
-    const product = await prisma.product.findUnique({ where: { id: variant.productId } });
-    if (!product) return NextResponse.json({ error: "Product not found" }, { status: 404 });
-    if (role !== "SUPER_ADMIN" && userStoreId !== product.storeId)
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const image = await prisma.image.create({
-    data: {
-      url,
-      altText,
-      metadata,
-      productId: productId ?? null,
-      variantId: variantId ?? null,
-    },
-  });
-
-  return NextResponse.json({ image }, { status: 201 });
 }

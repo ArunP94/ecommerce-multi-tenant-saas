@@ -1,55 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { requireStoreAccess, requireStoreOwnerOrStaff, handleAuthError } from "@/lib/api/auth-middleware";
-
-const imageInput = z.object({
-  url: z.string().url(),
-  altText: z.string().optional(),
-  metadata: z.any().optional(),
-  isPrimary: z.boolean().optional(),
-  sort: z.number().int().optional(),
-});
-
-const variantInput = z.object({
-  sku: z.string().min(1),
-  price: z.number().nonnegative(),
-  inventory: z.number().int().min(0).default(0),
-  attributes: z.record(z.string(), z.unknown()).default({}),
-  images: z.array(imageInput).default([]),
-  salePrice: z.number().nonnegative().optional(),
-  saleStart: z.string().optional(),
-  saleEnd: z.string().optional(),
-});
-
-const optionInput = z.object({
-  name: z.string().min(1),
-  type: z.enum(["color", "size", "custom"]).optional(),
-  values: z.array(z.object({
-    value: z.string().min(1),
-    hex: z.string().optional(),
-    imageUrl: z.string().url().optional(),
-  })).min(1),
-});
-
-const createProductSchema = z.object({
-  title: z.string().min(2),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  price: z.number().optional(),
-  hasVariants: z.boolean().default(false),
-  categories: z.array(z.string()).default([]),
-  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
-  images: z.array(imageInput).default([]),
-  options: z.array(optionInput).default([]),
-  variants: z.array(variantInput).default([]),
-  currency: z.string().default("GBP"),
-  salePrice: z.number().nonnegative().optional(),
-  saleStart: z.string().optional(),
-  saleEnd: z.string().optional(),
-});
+import { createProductSchema } from "@/lib/validation/api-schemas";
 
 export async function GET(
   _req: NextRequest,

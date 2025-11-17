@@ -1,17 +1,8 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { z } from "zod";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { requireStoreAccess, requireStoreOwnerOrStaff, handleAuthError } from "@/lib/api/auth-middleware";
-
-const updateSchema = z.object({
-  title: z.string().min(2).optional(),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  categories: z.array(z.string()).optional(),
-  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).optional(),
-  price: z.number().optional(),
-});
+import { updateProductSchema } from "@/lib/validation/api-schemas";
 
 export async function GET(
   _req: NextRequest,
@@ -41,7 +32,7 @@ export async function PUT(
     if (!product || product.storeId !== storeId) return ApiResponse.notFound();
 
     const json = await req.json().catch(() => ({}));
-    const parsed = updateSchema.safeParse(json);
+    const parsed = updateProductSchema.safeParse(json);
     if (!parsed.success) return ApiResponse.validationError(parsed.error);
 
     const { title, description, sku, categories, status, price } = parsed.data;
