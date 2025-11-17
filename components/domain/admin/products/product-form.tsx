@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller, type FieldPath, type Resolver } from "react-hook-form";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import { StyledUploadButton } from "@/components/ui/styled-upload-button";
 import {
   DndContext,
   DragEndEvent,
@@ -347,17 +348,23 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
 
               <TabsContent value="images" className="space-y-4">
                 <div className="flex flex-col gap-2">
-                  <UploadButton<OurFileRouter, "productImage">
+                  <StyledUploadButton
                     endpoint="productImage"
-                    onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
-                      const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
-                      if (urls.length > 0) productFormMethods.addImages(urls);
+                    onComplete={(files) => {
+                      const urls = files.map(f => f.url).filter(Boolean);
+                      if (urls.length > 0) {
+                        productFormMethods.addImages(urls);
+                        toast.success("Images uploaded");
+                      }
                     }}
-                    onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
-                    appearance={{ container: "w-fit", button: "inline-flex items-center gap-2" as unknown as string }}
-                    content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-2"><ImageIcon className="size-4" /> {ready ? "Upload images" : "Preparing…"}</span>) }}
-                  />
-<p className="text-xs text-muted-foreground">{hasVariants ? "Set a Primary image used when a variant has no image. Drag to reorder." : "Drag to reorder. Click \"Make primary\" to set default image."}</p>
+                    onError={(e) => toast.error(e.message || "Upload failed")}
+                    variant="default"
+                    size="default"
+                  >
+                    <ImageIcon className="size-4" />
+                    Upload images
+                  </StyledUploadButton>
+                  <p className="text-xs text-muted-foreground">{hasVariants ? "Set a Primary image used when a variant has no image. Drag to reorder." : "Drag to reorder. Click \"Make primary\" to set default image."}</p>
                 </div>
 
                 {images.length > 0 ? (
@@ -491,16 +498,23 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                                   </TableCell>
                                   <TableCell className="px-2 py-2 min-w-44">
                                     <div className="flex items-center gap-2">
-                                      <UploadButton<OurFileRouter, "productImage">
+                                      <StyledUploadButton
                                         endpoint="productImage"
-                                        onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
-                                          const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
-                                          if (urls.length > 0) productFormMethods.addVariantImages(idx, urls);
+                                        onComplete={(files) => {
+                                          const urls = files.map(f => f.url).filter(Boolean);
+                                          if (urls.length > 0) {
+                                            productFormMethods.addVariantImages(idx, urls);
+                                            toast.success("Variant images added");
+                                          }
                                         }}
-                                        onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
-                                        appearance={{ container: "w-fit", button: "inline-flex items-center gap-1 px-2 py-1 text-xs border rounded" as unknown as string }}
-                                        content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-1"><ImageIcon className="size-3" /> {ready ? "Add" : "…"}</span>) }}
-                                      />
+                                        onError={(e) => toast.error(e.message || "Upload failed")}
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 px-2 text-xs"
+                                      >
+                                        <ImageIcon className="size-3" />
+                                        Add
+                                      </StyledUploadButton>
                                       {(() => {
                                         const imgs = (form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]) || [];
                                         return imgs.length ? (

@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { Copy } from "lucide-react";
+import { StockStatusBadge } from "./stock-status-badge";
 
 type VariantRowIn = { id: string; sku: string; price: number; inventory: number; attributes: unknown; product: { title: string } }[];
 
@@ -29,12 +31,29 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
   const pageSize = 20;
   const [groupByProduct, setGroupByProduct] = React.useState(true);
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
+  const [stockFilter, setStockFilter] = React.useState<"all" | "low" | "out">("all");
 
   const filtered = React.useMemo(() => {
     const s = q.trim().toLowerCase();
-    if (!s) return rows;
-    return rows.filter(r => r.productTitle.toLowerCase().includes(s) || r.sku.toLowerCase().includes(s));
-  }, [rows, q]);
+    let result = rows;
+    
+    // Text search
+    if (s) {
+      result = result.filter(r => 
+        r.productTitle.toLowerCase().includes(s) || 
+        r.sku.toLowerCase().includes(s)
+      );
+    }
+    
+    // Stock filter
+    if (stockFilter === "low") {
+      result = result.filter(r => r.trackInventory && r.inventory > 0 && r.inventory <= 5);
+    } else if (stockFilter === "out") {
+      result = result.filter(r => r.trackInventory && r.inventory === 0);
+    }
+    
+    return result;
+  }, [rows, q, stockFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paged = React.useMemo(() => {
@@ -61,7 +80,7 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sku: row.sku,
+          // SKU is readonly and not sent
           price: Number(row.price),
           inventory: Number(row.inventory),
           trackInventory: row.trackInventory,
@@ -82,6 +101,29 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Input placeholder="Search product or SKU" value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} className="w-64" />
+          <div className="flex gap-1">
+            <Button
+              variant={stockFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setStockFilter("all"); setPage(1); }}
+            >
+              All
+            </Button>
+            <Button
+              variant={stockFilter === "low" ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setStockFilter("low"); setPage(1); }}
+            >
+              Low Stock
+            </Button>
+            <Button
+              variant={stockFilter === "out" ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setStockFilter("out"); setPage(1); }}
+            >
+              Out of Stock
+            </Button>
+          </div>
           <Button variant="outline" size="sm" onClick={() => setGroupByProduct((v) => !v)}>
             {groupByProduct ? "Ungroup" : "Group by product"}
           </Button>
@@ -95,6 +137,7 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
           <TableRow className="bg-muted/50">
             <TableHead className="px-2 py-2 text-left font-medium">Product</TableHead>
             <TableHead className="px-2 py-2 text-left font-medium">SKU</TableHead>
+            <TableHead className="px-2 py-2 text-left font-medium">Status</TableHead>
             <TableHead className="px-2 py-2 text-left font-medium">Price</TableHead>
             <TableHead className="px-2 py-2 text-left font-medium">Qty</TableHead>
             <TableHead className="px-2 py-2 text-left font-medium">Track</TableHead>
@@ -107,7 +150,7 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
             ? Object.entries(groups).map(([productTitle, list]) => (
                 <React.Fragment key={productTitle}>
                   <TableRow className="bg-muted/40">
-                    <TableCell className="px-2 py-2 font-medium" colSpan={7}>
+                    <TableCell className="px-2 py-2 font-medium" colSpan={8}>
                       <Button variant="ghost" size="sm"
                         className="justify-start w-full"
                         onClick={() => setOpenGroups((prev) => ({ ...prev, [productTitle]: !prev[productTitle] }))}
@@ -121,7 +164,31 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
                     <TableRow key={r.id} className="border-b last:border-0">
                       <TableCell className="px-2 py-2 min-w-56">{r.productTitle}</TableCell>
                       <TableCell className="px-2 py-2 min-w-40">
-                        <Input value={r.sku} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, sku: e.target.value } : p))} />
+                        <div className="flex items-center gap-2">
+                          <code className="text-sm font-mono bg-muted px-2 py-1 rounded border">
+                            {r.sku}
+                          </code>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              navigator.clipboard.writeText(r.sku);
+                              toast.success("SKU copied to clipboard");
+                            }}
+                            title="Copy SKU"
+                          >
+                            <Copy className="size-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-2 py-2 min-w-32">
+                        <StockStatusBadge
+                          inventory={r.inventory}
+                          trackInventory={r.trackInventory}
+                          backorder={r.backorder}
+                        />
                       </TableCell>
                       <TableCell className="px-2 py-2 min-w-28">
                         <Input type="number" step="0.01" min="0" value={r.price} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, price: Number(e.target.value) } : p))} />
@@ -143,7 +210,31 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
                 <TableRow key={r.id} className="border-b last:border-0">
                   <TableCell className="px-2 py-2 min-w-56">{r.productTitle}</TableCell>
                   <TableCell className="px-2 py-2 min-w-40">
-                    <Input value={r.sku} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, sku: e.target.value } : p))} />
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm font-mono bg-muted px-2 py-1 rounded border">
+                        {r.sku}
+                      </code>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => {
+                          navigator.clipboard.writeText(r.sku);
+                          toast.success("SKU copied to clipboard");
+                        }}
+                        title="Copy SKU"
+                      >
+                        <Copy className="size-3" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-2 py-2 min-w-32">
+                    <StockStatusBadge
+                      inventory={r.inventory}
+                      trackInventory={r.trackInventory}
+                      backorder={r.backorder}
+                    />
                   </TableCell>
                   <TableCell className="px-2 py-2 min-w-28">
                     <Input type="number" step="0.01" min="0" value={r.price} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, price: Number(e.target.value) } : p))} />

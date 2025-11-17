@@ -5,12 +5,11 @@ import Image from "next/image";
 import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GripVertical, Image as ImageIcon } from "lucide-react";
+import { StyledUploadButton } from "@/components/ui/styled-upload-button";
 
 export type VariantImage = { id?: string; url: string; altText?: string; isPrimary?: boolean };
 
@@ -112,15 +111,18 @@ export default function VariantImagesDialog({ open, onOpenChange, images, onChan
         </DialogHeader>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <UploadButton<OurFileRouter, "productImage">
+            <StyledUploadButton
               endpoint="productImage"
-              onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
-                const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
+              onComplete={(files) => {
+                const urls = files.map(f => f.url).filter(Boolean);
                 if (urls.length > 0) addUrls(urls);
               }}
-              appearance={{ container: "w-fit", button: `${buttonVariants({ variant: "default", size: "default" })}` as unknown as string }}
-              content={{ button: ({ ready }) => (<span className="inline-flex items-center gap-2"><ImageIcon className="size-4" /> {ready ? "Upload" : "…"}</span>) }}
-            />
+              variant="default"
+              size="default"
+            >
+              <ImageIcon className="size-4" />
+              Upload
+            </StyledUploadButton>
             <span className="text-xs text-muted-foreground">Drag to reorder. Choose one Primary.</span>
           </div>
 
