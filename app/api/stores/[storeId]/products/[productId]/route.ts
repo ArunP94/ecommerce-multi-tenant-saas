@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { z } from "zod";
+import { ApiResponse } from "@/lib/api/response-factory";
+import { requireStoreAccess, requireStoreOwnerOrStaff, handleAuthError } from "@/lib/api/auth-middleware";
 
 const updateSchema = z.object({
   title: z.string().min(2).optional(),
@@ -16,92 +17,86 @@ export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ storeId: string; productId: string }> }
 ) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const { storeId, productId } = await context.params;
+    await requireStoreAccess(storeId);
 
-  const { storeId, productId } = await context.params;
-  if (role !== "SUPER_ADMIN" && userStoreId !== storeId) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  const product = await prisma.product.findUnique({ where: { id: productId, /* store scoped via check */ }, include: { variants: true, images: true } });
-  if (!product || product.storeId !== storeId) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json({ product });
+    const product = await prisma.product.findUnique({ where: { id: productId }, include: { variants: true, images: true } });
+    if (!product || product.storeId !== storeId) return ApiResponse.notFound();
+    return ApiResponse.success({ product }, 200);
+  } catch (error) {
+    return handleAuthError(error);
+  }
 }
 
 export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ storeId: string; productId: string }> }
 ) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const { storeId, productId } = await context.params;
+    await requireStoreAccess(storeId);
 
-  const { storeId, productId } = await context.params;
-  const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product || (role !== "SUPER_ADMIN" && userStoreId !== product.storeId)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product || product.storeId !== storeId) return ApiResponse.notFound();
 
-  const json = await req.json();
-  const parsed = updateSchema.safeParse(json);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
+    const json = await req.json().catch(() => ({}));
+    const parsed = updateSchema.safeParse(json);
+    if (!parsed.success) return ApiResponse.validationError(parsed.error);
 
-  const { title, description, sku, categories, status, price } = parsed.data;
+    const { title, description, sku, categories, status, price } = parsed.data;
 
-  // SKU uniqueness check within store
-  if (sku && sku !== product.sku) {
-    const existing = await prisma.product.findFirst({ where: { storeId, sku } });
-    if (existing) return NextResponse.json({ error: "A product with this SKU already exists in this store." }, { status: 400 });
+    if (sku && sku !== product.sku) {
+      const existing = await prisma.product.findFirst({ where: { storeId, sku } });
+      if (existing) return ApiResponse.badRequest("A product with this SKU already exists in this store.");
+    }
+
+    const metadata = {
+      ...(product.metadata as Record<string, unknown> | null) ?? {},
+      ...(status ? { status } : {}),
+    };
+
+    const updated = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        ...(title !== undefined ? { title } : {}),
+        ...(description !== undefined ? { description } : {}),
+        ...(sku !== undefined ? { sku } : {}),
+        ...(categories !== undefined ? { categories } : {}),
+        ...(price !== undefined && !product.hasVariants ? { price } : {}),
+        metadata,
+      },
+    });
+
+    return ApiResponse.success({ product: updated }, 200);
+  } catch (error) {
+    return handleAuthError(error);
   }
-
-  const metadata = {
-    ...(product.metadata as Record<string, unknown> | null) ?? {},
-    ...(status ? { status } : {}),
-  };
-
-  const updated = await prisma.product.update({
-    where: { id: productId },
-    data: {
-      ...(title !== undefined ? { title } : {}),
-      ...(description !== undefined ? { description } : {}),
-      ...(sku !== undefined ? { sku } : {}),
-      ...(categories !== undefined ? { categories } : {}),
-      ...(price !== undefined && !product.hasVariants ? { price } : {}),
-      metadata,
-    },
-  });
-
-  return NextResponse.json({ product: updated });
 }
 
 export async function DELETE(
   _req: NextRequest,
   context: { params: Promise<{ storeId: string; productId: string }> }
 ) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const { storeId, productId } = await context.params;
+    await requireStoreAccess(storeId);
+    await requireStoreOwnerOrStaff();
 
-  const { productId } = await context.params;
-  const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true, storeId: true } });
-  if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (role !== "SUPER_ADMIN" && userStoreId !== product.storeId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  if (!(["SUPER_ADMIN", "STORE_OWNER", "STAFF"].includes(role))) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-  }
+    const product = await prisma.product.findUnique({ where: { id: productId }, select: { id: true, storeId: true } });
+    if (!product || product.storeId !== storeId) return ApiResponse.notFound();
 
-  // Clean up children
-  const variants = await prisma.variant.findMany({ where: { productId }, select: { id: true } });
-  const variantIds = variants.map(v => v.id);
-  if (variantIds.length > 0) {
-    await prisma.image.deleteMany({ where: { variantId: { in: variantIds } } });
-  }
-  await prisma.image.deleteMany({ where: { productId, variantId: null } });
-  await prisma.variant.deleteMany({ where: { productId } });
-  await prisma.product.delete({ where: { id: productId } });
+    const variants = await prisma.variant.findMany({ where: { productId }, select: { id: true } });
+    const variantIds = variants.map(v => v.id);
+    if (variantIds.length > 0) {
+      await prisma.image.deleteMany({ where: { variantId: { in: variantIds } } });
+    }
+    await prisma.image.deleteMany({ where: { productId, variantId: null } });
+    await prisma.variant.deleteMany({ where: { productId } });
+    await prisma.product.delete({ where: { id: productId } });
 
-  return NextResponse.json({ ok: true });
+    return ApiResponse.success({ ok: true }, 200);
+  } catch (error) {
+    return handleAuthError(error);
+  }
 }

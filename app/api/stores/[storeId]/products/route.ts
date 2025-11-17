@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
+import { ApiResponse } from "@/lib/api/response-factory";
+import { requireStoreAccess, requireStoreOwnerOrStaff, handleAuthError } from "@/lib/api/auth-middleware";
 
 const imageInput = z.object({
   url: z.string().url(),
@@ -54,43 +55,31 @@ export async function GET(
   _req: NextRequest,
   context: { params: Promise<{ storeId: string }> }
 ) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const { storeId } = await context.params;
+    await requireStoreAccess(storeId);
 
-  const { storeId } = await context.params;
-  if (role !== "SUPER_ADMIN" && userStoreId !== storeId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const products = await prisma.product.findMany({ where: { storeId } });
+    return ApiResponse.success({ products, storeId }, 200);
+  } catch (error) {
+    return handleAuthError(error);
   }
-
-  const products = await prisma.product.findMany({ where: { storeId } });
-  return NextResponse.json({ products, storeId });
 }
 
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ storeId: string }> }
 ) {
-  const session = await auth();
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const role = session.user.role;
-  const userStoreId = session.user.storeId ?? null;
+  try {
+    const { storeId } = await context.params;
+    await requireStoreAccess(storeId);
+    await requireStoreOwnerOrStaff();
 
-  const { storeId } = await context.params;
-  if (role !== "SUPER_ADMIN" && userStoreId !== storeId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  // Allow store staff to create products for their store
-  if (!(["SUPER_ADMIN", "STORE_OWNER", "STAFF"].includes(role))) {
-    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-  }
-
-  const json = await req.json();
-  const parsed = createProductSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
-  }
+    const json = await req.json().catch(() => ({}));
+    const parsed = createProductSchema.safeParse(json);
+    if (!parsed.success) {
+      return ApiResponse.validationError(parsed.error);
+    }
 
   const {
     title,
@@ -109,61 +98,56 @@ export async function POST(
     saleEnd,
   } = parsed.data;
 
-  // Basic validations
-  if (!hasVariants) {
-    if (typeof price !== "number") {
-      return NextResponse.json({ error: "Price is required when product has no variants." }, { status: 400 });
+    if (!hasVariants) {
+      if (typeof price !== "number") {
+        return ApiResponse.badRequest("Price is required when product has no variants.");
+      }
+    } else {
+      if (!variants || variants.length === 0) {
+        return ApiResponse.badRequest("At least one variant is required when hasVariants is true.");
+      }
     }
-  } else {
-    if (!variants || variants.length === 0) {
-      return NextResponse.json({ error: "At least one variant is required when hasVariants is true." }, { status: 400 });
+
+    const hasAnyImages = (images?.length ?? 0) > 0 || (variants ?? []).some(v => (v.images?.length ?? 0) > 0);
+    if (!hasAnyImages) {
+      return ApiResponse.badRequest("At least one image (product-level or variant-level) is required.");
     }
-  }
 
-  const hasAnyImages = (images?.length ?? 0) > 0 || (variants ?? []).some(v => (v.images?.length ?? 0) > 0);
-  if (!hasAnyImages) {
-    return NextResponse.json({ error: "At least one image (product-level or variant-level) is required." }, { status: 400 });
-  }
-
-  // Enforce SKU uniqueness: product-level within store
-  if (sku) {
-    const existingSku = await prisma.product.findFirst({ where: { storeId, sku } });
-    if (existingSku) {
-      return NextResponse.json({ error: "A product with this SKU already exists in this store." }, { status: 400 });
+    if (sku) {
+      const existingSku = await prisma.product.findFirst({ where: { storeId, sku } });
+      if (existingSku) {
+        return ApiResponse.badRequest("A product with this SKU already exists in this store.");
+      }
     }
-  }
 
-  // Variant SKU validations: duplicates in payload and collisions in DB
-  // Build variants with auto-generated SKUs if missing and validate uniqueness
-  const makeSku = () => `V-${Math.random().toString(36).slice(2,6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-  const variantsWithSku = (variants ?? []).map((v) => ({ ...v, sku: (v.sku?.trim() || makeSku()) }));
-  const payloadSkuSet = new Set<string>();
-  for (const v of variantsWithSku) {
-    if (payloadSkuSet.has(v.sku)) {
-      return NextResponse.json({ error: `Duplicate variant SKU in request: ${v.sku}` }, { status: 400 });
+    const makeSku = () => `V-${Math.random().toString(36).slice(2,6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+    const variantsWithSku = (variants ?? []).map((v) => ({ ...v, sku: (v.sku?.trim() || makeSku()) }));
+    const payloadSkuSet = new Set<string>();
+    for (const v of variantsWithSku) {
+      if (payloadSkuSet.has(v.sku)) {
+        return ApiResponse.badRequest(`Duplicate variant SKU in request: ${v.sku}`);
+      }
+      payloadSkuSet.add(v.sku);
     }
-    payloadSkuSet.add(v.sku);
-  }
-  if (variantsWithSku.length > 0) {
-    const existingVariants = await prisma.variant.findMany({ where: { sku: { in: Array.from(payloadSkuSet) } }, select: { sku: true } });
-    if (existingVariants.length > 0) {
-      return NextResponse.json({ error: `Variant SKU(s) already exist: ${existingVariants.map(v => v.sku).join(", ")}` }, { status: 400 });
+    if (variantsWithSku.length > 0) {
+      const existingVariants = await prisma.variant.findMany({ where: { sku: { in: Array.from(payloadSkuSet) } }, select: { sku: true } });
+      if (existingVariants.length > 0) {
+        return ApiResponse.badRequest(`Variant SKU(s) already exist: ${existingVariants.map(v => v.sku).join(", ")}`);
+      }
     }
-  }
 
-  // Prepare nested data
-  const anyPrimaryAtProduct = images?.some(i => i.isPrimary) ?? false;
-  const productImagesCreate = (images ?? []).map((img, idx) => ({
-    url: img.url,
-    altText: img.altText,
-    metadata: {
-      ...(img.metadata ?? {}),
-      isPrimary: anyPrimaryAtProduct ? Boolean(img.isPrimary) : idx === 0,
-      sort: typeof img.sort === "number" ? img.sort : idx,
-    },
-  }));
+    const anyPrimaryAtProduct = images?.some(i => i.isPrimary) ?? false;
+    const productImagesCreate = (images ?? []).map((img, idx) => ({
+      url: img.url,
+      altText: img.altText,
+      metadata: {
+        ...(img.metadata ?? {}),
+        isPrimary: anyPrimaryAtProduct ? Boolean(img.isPrimary) : idx === 0,
+        sort: typeof img.sort === "number" ? img.sort : idx,
+      },
+    }));
 
-const variantsCreate = hasVariants
+    const variantsCreate = hasVariants
       ? variantsWithSku.map((v) => {
         const anyPrimaryAtVariant = v.images?.some(i => i.isPrimary) ?? false;
         const imagesCreate = (v.images ?? []).map((img, idx) => ({
@@ -191,35 +175,38 @@ const variantsCreate = hasVariants
           images: { create: imagesCreate },
         };
       })
-    : undefined;
+      : undefined;
 
-  const metadata: Record<string, unknown> = {
-    status,
-    options,
-    currency,
-  };
-  if (salePrice !== undefined || saleStart || saleEnd) {
-    metadata.sale = {
-      price: salePrice ?? null,
-      start: saleStart ? new Date(saleStart) : null,
-      end: saleEnd ? new Date(saleEnd) : null,
+    const metadata: Record<string, unknown> = {
+      status,
+      options,
+      currency,
     };
+    if (salePrice !== undefined || saleStart || saleEnd) {
+      metadata.sale = {
+        price: salePrice ?? null,
+        start: saleStart ? new Date(saleStart) : null,
+        end: saleEnd ? new Date(saleEnd) : null,
+      };
+    }
+
+    const product = await prisma.product.create({
+      data: {
+        storeId,
+        title,
+        description,
+        sku: sku ?? null,
+        price: hasVariants ? null : (typeof price === "number" ? price : null),
+        hasVariants,
+        categories,
+        metadata: metadata as Prisma.InputJsonValue,
+        images: productImagesCreate.length > 0 ? { create: productImagesCreate } : undefined,
+        variants: variantsCreate && variantsCreate.length > 0 ? { create: variantsCreate } : undefined,
+      },
+    });
+
+    return ApiResponse.created({ product, storeId });
+  } catch (error) {
+    return handleAuthError(error);
   }
-
-  const product = await prisma.product.create({
-    data: {
-      storeId,
-      title,
-      description,
-      sku: sku ?? null,
-      price: hasVariants ? null : (typeof price === "number" ? price : null),
-      hasVariants,
-      categories,
-      metadata: metadata as Prisma.InputJsonValue,
-      images: productImagesCreate.length > 0 ? { create: productImagesCreate } : undefined,
-      variants: variantsCreate && variantsCreate.length > 0 ? { create: variantsCreate } : undefined,
-    },
-  });
-
-  return NextResponse.json({ product, storeId }, { status: 201 });
 }
