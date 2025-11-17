@@ -1,10 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller, type FieldPath, type Resolver } from "react-hook-form";
 import { UploadButton } from "@uploadthing/react";
@@ -35,78 +33,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import VariantImagesDialog from "@/components/admin/products/variant-images-dialog";
-
-// Types
-const ImageSchema = z.object({
-  id: z.string(),
-  url: z.string().url(),
-  altText: z.string().optional(),
-  isPrimary: z.boolean().optional(),
-});
-
-const VariantRowSchema = z.object({
-  key: z.string(), // combination key
-  attributes: z.record(z.string(), z.string()),
-  sku: z.string().min(1, "SKU is required"),
-  price: z.coerce.number().nonnegative(),
-  inventory: z.coerce.number().int().min(0).default(0),
-  images: z.array(ImageSchema.omit({ id: true })).optional().default([]),
-  salePrice: z.coerce.number().nonnegative().optional(),
-  saleStart: z.string().optional(),
-  saleEnd: z.string().optional(),
-  trackInventory: z.boolean().default(true),
-  backorder: z.boolean().default(false),
-});
-
-const OptionValueSchema = z.object({ id: z.string(), value: z.string().min(1), hex: z.string().optional() });
-const OptionSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1),
-  type: z.enum(["color", "size", "custom"]).default("custom"),
-  values: z.array(OptionValueSchema).min(1),
-});
-
-const ProductFormSchema = z.object({
-  title: z.string().min(2),
-  sku: z.string().optional(),
-  description: z.string().optional(),
-  categories: z.array(z.string()).default([]),
-  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
-  hasVariants: z.boolean().default(false),
-  // Non-variant pricing
-  price: z.coerce.number().nonnegative().optional(),
-  currency: z.string().default("GBP"),
-  salePrice: z.coerce.number().nonnegative().optional(),
-  saleStart: z.string().optional(),
-  saleEnd: z.string().optional(),
-
-  images: z.array(ImageSchema).default([]),
-  options: z.array(OptionSchema).default([]),
-  variants: z.array(VariantRowSchema).default([]),
-});
-
-export type ProductFormValues = z.infer<typeof ProductFormSchema>;
-
-function cartesian<T>(arrays: T[][]): T[][] {
-  if (arrays.length === 0) return [];
-  return arrays.reduce<T[][]>((acc, curr) => {
-    if (acc.length === 0) return curr.map((v) => [v]);
-    const next: T[][] = [];
-    for (const a of acc) {
-      for (const c of curr) {
-        next.push([...a, c]);
-      }
-    }
-    return next;
-  }, []);
-}
-
-function makeComboKey(attrs: Record<string, string>): string {
-  return Object.keys(attrs)
-    .sort()
-    .map((k) => `${k}:${attrs[k]}`)
-    .join("|");
-}
+import { productFormSchema, type ProductFormValues } from "@/lib/validation/form-schemas";
+import { useProductForm } from "@/hooks/use-product-form";
 
 // Sortable image item
 const SortableImageItem = React.memo(function SortableImageItem({ image, onRemove, onPrimary }: { image: { id: string; url: string; isPrimary?: boolean }; onRemove: () => void; onPrimary: () => void }) {
@@ -143,9 +71,8 @@ const SortableImageItem = React.memo(function SortableImageItem({ image, onRemov
 });
 
 function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, initialValues, onSubmitOverride, }: { storeId: string; defaultCurrency?: string; storeSettings?: { currency?: string; multiCurrency?: boolean; conversionRates?: Record<string, number>; categories?: string[] }; initialValues?: Partial<ProductFormValues>; onSubmitOverride?: (values: ProductFormValues, publish: boolean) => Promise<void>; }) {
-  const router = useRouter();
   const form = useForm<ProductFormValues>({
-    resolver: zodResolver(ProductFormSchema) as Resolver<ProductFormValues>,
+    resolver: zodResolver(productFormSchema) as Resolver<ProductFormValues>,
     defaultValues: {
       title: "",
       sku: "",
@@ -166,23 +93,18 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
     mode: "onBlur",
   });
 
+  const productFormMethods = useProductForm(form, { storeId, onSubmitOverride });
+  const { images, hasVariants, options, variants, attributeColumns, addCategory } = productFormMethods;
+
   const [categoryInput, setCategoryInput] = useState("");
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [categoryHighlight, setCategoryHighlight] = useState(0);
-  const allCategories = useMemo(() => Array.from(new Set(storeSettings?.categories ?? [])), [storeSettings]);
-  const filteredCategories = useMemo(() => {
+  const allCategories = React.useMemo(() => Array.from(new Set(storeSettings?.categories ?? [])), [storeSettings]);
+  const filteredCategories = React.useMemo(() => {
     const term = categoryFilter.toLowerCase();
     return allCategories.filter((c) => c.toLowerCase().includes(term));
   }, [allCategories, categoryFilter]);
-
-  function addCategory(name: string) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    const current = form.getValues("categories") || [];
-    const next = Array.from(new Set([...current, trimmed]));
-    form.setValue("categories", next);
-  }
 
   function onCategoryFilterKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     const term = categoryFilter.trim();
@@ -199,9 +121,9 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
       e.preventDefault();
       if (total === 0) return;
       if (categoryHighlight < filteredCategories.length) {
-        addCategory(filteredCategories[categoryHighlight]);
+        productFormMethods.addCategory(filteredCategories[categoryHighlight]);
       } else if (canCreate) {
-        addCategory(term);
+        productFormMethods.addCategory(term);
       }
       setCategoryMenuOpen(false);
     } else if (e.key === "Escape") {
@@ -210,73 +132,21 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
     }
   }
 
-  // Image dragging
   const sensors = useSensors(useSensor(PointerSensor));
-  const images = form.watch("images");
-  const hasVariants = form.watch("hasVariants");
-  const options = form.watch("options");
-  const variants = form.watch("variants");
   const [openVariantImagesIndex, setOpenVariantImagesIndex] = React.useState<number | null>(null);
-
-  // Ensure options and values have stable IDs when coming from initialValues
-  useEffect(() => {
-    const opts = form.getValues("options") as unknown as Array<{ id?: string; name: string; type: "color"|"size"|"custom"; values?: Array<{ id?: string; value: string; hex?: string }> }>;
-    if (!opts || opts.length === 0) return;
-    let changed = false;
-    const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    const normalized = opts.map((o, oi) => {
-      const id = o.id && o.id.length ? o.id : `opt-${oi}-${slug(o.name || "option")}-${Math.random().toString(36).slice(2,6)}`;
-      if (!o.id) changed = true;
-      const values = (o.values ?? []).map((v, vi) => {
-        const vid = v.id && v.id.length ? v.id : `optv-${oi}-${vi}-${slug(v.value || "value")}-${Math.random().toString(36).slice(2,6)}`;
-        if (!v.id) changed = true;
-        return { id: vid, value: v.value, hex: v.hex };
-        });
-      return { id, name: o.name, type: o.type, values };
-    });
-    if (changed) {
-      form.setValue("options", normalized as unknown as ProductFormValues["options"]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = images.findIndex((i) => i.id === active.id);
-    const newIndex = images.findIndex((i) => i.id === over.id);
-    const ordered = arrayMove(images, oldIndex, newIndex);
+    const oldIndex = productFormMethods.images.findIndex((i) => i.id === active.id);
+    const newIndex = productFormMethods.images.findIndex((i) => i.id === over.id);
+    const ordered = arrayMove(productFormMethods.images, oldIndex, newIndex);
     form.setValue(
       "images",
       ordered.map((img) => ({ ...img }))
     );
   }
 
-  function addImages(urls: string[]) {
-    const next = [...images];
-    for (const url of urls) {
-      const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-      next.push({ id, url, isPrimary: next.length === 0 ? true : false });
-    }
-    // Ensure exactly one primary
-    if (!next.some((i) => i.isPrimary)) next[0] = { ...next[0], isPrimary: true };
-    form.setValue("images", next, { shouldValidate: true });
-  }
-
-  function removeImage(id: string) {
-    let next = images.filter((i) => i.id !== id);
-    if (next.length > 0 && !next.some((i) => i.isPrimary)) {
-      next = next.map((i, idx) => ({ ...i, isPrimary: idx === 0 }));
-    }
-    form.setValue("images", next, { shouldValidate: true });
-  }
-
-  function setPrimaryImage(id: string) {
-    const next = images.map((i) => ({ ...i, isPrimary: i.id === id }));
-    form.setValue("images", next, { shouldValidate: true });
-  }
-
-  // Categories helpers
   function addCategoryFromInput() {
     const trimmed = categoryInput.trim();
     if (!trimmed) return;
@@ -286,191 +156,6 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
     form.setValue("categories", Array.from(new Set(merged)));
     setCategoryInput("");
   }
-  function removeCategory(cat: string) {
-    form.setValue("categories", form.getValues("categories").filter((c) => c !== cat));
-  }
-
-  // Options and variants
-  function addOption() {
-    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const next = [...options, { id, name: "Option", type: "custom" as const, values: [] }];
-    form.setValue("options", next);
-  }
-  function removeOption(id: string) {
-    const next = options.filter((o) => o.id !== id);
-    form.setValue("options", next);
-  }
-  function updateOptionName(id: string, name: string) {
-    const next = options.map((o) => (o.id === id ? { ...o, name } : o));
-    form.setValue("options", next);
-  }
-  function updateOptionType(id: string, type: "color" | "size" | "custom") {
-    const next = options.map((o) => (o.id === id ? { ...o, type } : o));
-    form.setValue("options", next);
-  }
-  function addOptionValues(id: string, raw: string) {
-    const cleaned = raw.replace(/\s+/g, ",");
-    const parts = cleaned
-      .split(",")
-      .map((p) => p.trim())
-      .filter(Boolean);
-    if (parts.length === 0) return;
-    const next = options.map((o) =>
-      o.id === id
-        ? {
-            ...o,
-            values: [
-              ...o.values,
-              ...parts.map((v) => ({ id: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}` , value: v })),
-            ],
-          }
-        : o
-    );
-    form.setValue("options", next);
-  }
-  function removeOptionValue(optionId: string, valueId: string) {
-    const next = options.map((o) => (o.id === optionId ? { ...o, values: o.values.filter((v) => v.id !== valueId) } : o));
-    form.setValue("options", next);
-  }
-
-  function generateVariants() {
-    const named = options.filter((o) => o.name.trim() && o.values.length > 0);
-    if (named.length === 0) {
-      form.setValue("variants", []);
-      return;
-    }
-    const arrays = named.map((o) => o.values.map((v) => ({ option: o.name.trim(), value: v.value })));
-    const combos = cartesian(arrays);
-    const rows = combos.map((combo) => {
-      const attrs: Record<string, string> = {};
-      for (const part of combo) attrs[part.option] = part.value;
-      const key = makeComboKey(attrs);
-      // keep existing row values if present
-      const existing = form.getValues("variants").find((r) => r.key === key);
-      return (
-        existing ?? {
-          key,
-          attributes: attrs,
-          sku: "",
-          price: form.getValues("price") ?? 0,
-          inventory: 0,
-          images: [],
-          trackInventory: true,
-          backorder: false,
-        }
-      );
-    });
-    form.setValue("variants", rows, { shouldValidate: true });
-  }
-
-  // Recompute variants when options change if hasVariants
-  useEffect(() => {
-    if (hasVariants) generateVariants();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(options), hasVariants]);
-
-  async function onSubmit(values: ProductFormValues, publish = false) {
-    try {
-      // Required: at least one image (product or variant)
-      const anyImages = values.images.length > 0 || values.variants.some((v) => (v.images?.length ?? 0) > 0);
-      if (!anyImages) {
-        toast.error("Please add at least one image");
-        return;
-      }
-
-      // If no variants, require price
-      if (!values.hasVariants && (values.price === undefined || values.price === null)) {
-        toast.error("Price is required when there are no variants");
-        return;
-      }
-
-      const payload = {
-        title: values.title,
-        description: values.description?.trim() || undefined,
-        sku: values.sku?.trim() || undefined,
-        hasVariants: values.hasVariants,
-        categories: values.categories,
-        status: publish ? "ACTIVE" : values.status,
-        price: values.hasVariants ? undefined : values.price,
-        currency: values.currency,
-        salePrice: values.salePrice ?? undefined,
-        saleStart: values.saleStart || undefined,
-        saleEnd: values.saleEnd || undefined,
-        images: values.images.map((img, idx) => ({
-          url: img.url,
-          altText: img.altText,
-          isPrimary: img.isPrimary ?? idx === 0,
-          sort: idx,
-        })),
-        options: values.options.map((o) => ({
-          name: o.name.trim(),
-          type: o.type,
-          values: o.values.map((v) => ({ value: v.value, hex: v.hex })),
-        })),
-        variants: values.hasVariants
-          ? values.variants.map((v) => ({
-              sku: v.sku.trim(),
-              price: v.price,
-              inventory: v.inventory,
-              attributes: { ...(v.attributes || {}), trackInventory: v.trackInventory, backorder: v.backorder },
-              images: (v.images ?? []).map((img, idx) => ({ url: img.url, altText: img.altText, isPrimary: img.isPrimary ?? idx === 0, sort: idx })),
-              salePrice: v.salePrice ?? undefined,
-              saleStart: v.saleStart || undefined,
-              saleEnd: v.saleEnd || undefined,
-            }))
-          : [],
-      };
-
-      if (onSubmitOverride) {
-        await onSubmitOverride(values, publish);
-        return;
-      }
-
-      const res = await fetch(`/api/stores/${storeId}/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || `Failed to create product (${res.status})`);
-      }
-      toast.success("Product created");
-      router.push(`/admin/${storeId}/products`);
-      router.refresh();
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Failed to create product");
-    }
-  }
-
-  const attributeColumns = useMemo(() => {
-    const names = Array.from(
-      new Set(
-        variants.flatMap((v) => Object.keys(v.attributes || {}))
-      )
-    );
-    return names;
-  }, [variants]);
-
-  function addVariantImages(vIndex: number, urls: string[]) {
-    const current = form.getValues("variants");
-    const row = current[vIndex];
-    const nextImages = [...(row.images ?? [])];
-    for (const url of urls) {
-      nextImages.push({ url, altText: undefined, isPrimary: nextImages.length === 0 });
-    }
-    const updatedRow: ProductFormValues["variants"][number] = { ...row, images: nextImages };
-    current[vIndex] = updatedRow;
-    form.setValue("variants", [...current]);
-  }
-
-  function clearVariantImages(vIndex: number) {
-    const current = form.getValues("variants");
-    const row = current[vIndex];
-    const updatedRow: ProductFormValues["variants"][number] = { ...row, images: [] };
-    current[vIndex] = updatedRow;
-    form.setValue("variants", [...current]);
-  }
 
   return (
     <Card>
@@ -479,7 +164,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((vals) => onSubmit(vals, false))} className="space-y-6">
+          <form onSubmit={form.handleSubmit((vals) => productFormMethods.onSubmit(vals, false))} className="space-y-6">
             <Tabs defaultValue="general">
               <TabsList>
                 <TabsTrigger value="general">General</TabsTrigger>
@@ -611,7 +296,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                     {Array.from(new Set(form.watch("categories") || [])).map((cat) => (
                       <span key={cat} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs">
                         {cat}
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeCategory(cat)} aria-label={`Remove ${cat}`}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => productFormMethods.removeCategory(cat)} aria-label={`Remove ${cat}`}>
                           <X className="size-3" />
                         </Button>
                       </span>
@@ -666,7 +351,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                     endpoint="productImage"
                     onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
                       const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
-                      if (urls.length > 0) addImages(urls);
+                      if (urls.length > 0) productFormMethods.addImages(urls);
                     }}
                     onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
                     appearance={{ container: "w-fit", button: "inline-flex items-center gap-2" as unknown as string }}
@@ -683,8 +368,8 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                           <SortableImageItem
                             key={img.id}
                             image={img}
-                            onRemove={() => removeImage(img.id)}
-                            onPrimary={() => setPrimaryImage(img.id)}
+                            onRemove={() => productFormMethods.removeImage(img.id)}
+                            onPrimary={() => productFormMethods.setPrimaryImage(img.id)}
                           />
                         ))}
                       </div>
@@ -705,14 +390,14 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                         <h3 className="font-medium">Options</h3>
                         <p className="text-xs text-muted-foreground">Define option names and values (e.g., Color: Red, Blue)</p>
                       </div>
-                      <Button type="button" onClick={addOption} variant="outline" size="sm"><Plus className="size-4 mr-1" /> Add option</Button>
+                      <Button type="button" onClick={productFormMethods.addOption} variant="outline" size="sm"><Plus className="size-4 mr-1" /> Add option</Button>
                     </div>
                     <div className="space-y-3">
                       {options.map((opt, idx) => (
                         <div key={opt.id} className="rounded-md border p-3">
                           <div className="flex items-center gap-2">
-                            <Input value={opt.name} placeholder={`Option ${idx + 1} name`} onChange={(e) => updateOptionName(opt.id, e.target.value)} />
-<Select value={opt.type} onValueChange={(v: "color" | "size" | "custom") => updateOptionType(opt.id, v)}>
+                            <Input value={opt.name} placeholder={`Option ${idx + 1} name`} onChange={(e) => productFormMethods.updateOptionName(opt.id, e.target.value)} />
+<Select value={opt.type} onValueChange={(v: "color" | "size" | "custom") => productFormMethods.updateOptionType(opt.id, v)}>
                               <SelectTrigger className="w-36"><SelectValue placeholder="Type" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="color">Color</SelectItem>
@@ -720,7 +405,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                                 <SelectItem value="custom">Custom</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Button type="button" variant="ghost" onClick={() => removeOption(opt.id)} aria-label="Remove option">
+                            <Button type="button" variant="ghost" onClick={() => productFormMethods.removeOption(opt.id)} aria-label="Remove option">
                               <Trash2 className="size-4" />
                             </Button>
                           </div>
@@ -729,7 +414,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                               if (e.key === "Enter" || e.key === "," || e.key === " ") {
                                 e.preventDefault();
                                 const target = e.target as HTMLInputElement;
-                                addOptionValues(opt.id, target.value);
+                                productFormMethods.addOptionValues(opt.id, target.value);
                                 target.value = "";
                               }
                             }} />
@@ -740,7 +425,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                               {opt.values.map((v) => (
                                 <span key={v.id} className="inline-flex items-center gap-1 rounded border px-2 py-1 text-xs">
                                   {v.value}
-                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeOptionValue(opt.id, v.id)}>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => productFormMethods.removeOptionValue(opt.id, v.id)}>
                                     <X className="size-3" />
                                   </Button>
                                 </span>
@@ -810,7 +495,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                                         endpoint="productImage"
                                         onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
                                           const urls = (files || []).map((f) => f?.url ?? f?.serverData?.url ?? f?.file?.url).filter(Boolean) as string[];
-                                          if (urls.length > 0) addVariantImages(idx, urls);
+                                          if (urls.length > 0) productFormMethods.addVariantImages(idx, urls);
                                         }}
                                         onUploadError={(e) => { toast.error(e.message || "Upload failed"); }}
                                         appearance={{ container: "w-fit", button: "inline-flex items-center gap-1 px-2 py-1 text-xs border rounded" as unknown as string }}
@@ -843,7 +528,7 @@ function ProductFormContent({ storeId, defaultCurrency = "GBP", storeSettings, i
                                       })()}
                                       <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => setOpenVariantImagesIndex(idx)}>Manage</Button>
                                       {((form.watch(`variants.${idx}.images` as unknown as FieldPath<ProductFormValues>) as unknown as ProductFormValues["variants"][number]["images"]))?.length ? (
-                                        <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => clearVariantImages(idx)}>Clear</Button>
+                                        <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => productFormMethods.clearVariantImages(idx)}>Clear</Button>
                                       ) : null}
                                     </div>
                                   </TableCell>
@@ -985,8 +670,8 @@ onChange={(next) => {
             ) : null}
 
             <div className="flex items-center gap-2">
-              <Button type="submit" variant="secondary" onClick={form.handleSubmit((vals) => onSubmit(vals, false))}>Save draft</Button>
-              <Button type="button" onClick={form.handleSubmit((vals) => onSubmit(vals, true))}>Publish</Button>
+              <Button type="submit" variant="secondary" onClick={form.handleSubmit((vals) => productFormMethods.onSubmit(vals, false))}>Save draft</Button>
+              <Button type="button" onClick={form.handleSubmit((vals) => productFormMethods.onSubmit(vals, true))}>Publish</Button>
             </div>
           </form>
         </Form>
@@ -999,3 +684,4 @@ const ProductForm = React.memo(ProductFormContent);
 ProductForm.displayName = "ProductForm";
 
 export default ProductForm;
+export type { ProductFormValues };
