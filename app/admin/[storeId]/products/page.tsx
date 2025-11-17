@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductsTable from "@/components/admin/products/products-table";
+import { ProductsPageClient } from "@/components/admin/products/products-page-client";
 
 export default async function StoreProductsPage({ params, searchParams }: { params: Promise<{ storeId: string; }>; searchParams: Promise<{ q?: string; page?: string }> }) {
   const { storeId } = await params;
@@ -28,6 +29,7 @@ export default async function StoreProductsPage({ params, searchParams }: { para
 
   return (
     <div className="p-6 space-y-4">
+      <ProductsPageClient storeId={storeId} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Products</h1>

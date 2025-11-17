@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { StoreSelector } from "@/components/admin/store-selector";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { PanelLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -17,7 +18,7 @@ export function SiteHeader({
   role: string;
   stores: { id: string; name: string; }[];
   currentStoreId: string | null;
-  storeDomains: Record<string, { slug: string; customDomain: string | null }>;
+  storeDomains: Record<string, { slug: string; customDomain: string | null; }>;
   baseDomain: string;
 }) {
   const [viewHref, setViewHref] = useState<string | null>(null);
@@ -61,6 +62,7 @@ export function SiteHeader({
           <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeSwitcher />
           <Button asChild variant="outline" size="sm" disabled={!viewHref} aria-disabled={!viewHref}>
             {viewHref ? (
               <a href={viewHref} target="_blank" rel="noreferrer">View Store</a>
@@ -69,7 +71,7 @@ export function SiteHeader({
             )}
           </Button>
           <Button asChild size="sm" className="hidden sm:flex">
-            <Link href="/admin/stores" className="dark:text-foreground">Manage Stores</Link>
+            <Link href="/admin/stores">Manage Stores</Link>
           </Button>
         </div>
       </div>

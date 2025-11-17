@@ -7,6 +7,7 @@ import { ViewStoreLink } from "@/components/admin/view-store-link";
 import { ClientOnly } from "@/components/core/client-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StoresPageClient } from "@/components/admin/stores/stores-page-client";
 
 export default async function StoresPage() {
   const session = await auth();
@@ -23,6 +24,7 @@ export default async function StoresPage() {
 
   return (
     <div className="px-4 pb-8 lg:px-6 space-y-6">
+      <StoresPageClient />
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold">Stores</h1>
         <p className="text-sm text-muted-foreground">Create and manage stores.</p>

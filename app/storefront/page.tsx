@@ -3,7 +3,7 @@ import { headers, cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { extractSlugFromHost, normalizeHost } from "@/lib/domain";
 import PreviewLinkManager from "@/components/storefront/preview-utils.client";
-import { Menu, Search, Heart, User, ShoppingBag } from "lucide-react";
+import { StorefrontHeader } from "@/components/storefront/storefront-header";
 
 export default async function StorefrontPage({ searchParams }: { searchParams: Promise<{ preview?: string; }>; }) {
   const hdrs = await headers();
@@ -44,68 +44,31 @@ export default async function StorefrontPage({ searchParams }: { searchParams: P
   const place = align === "left" ? "place-items-start" : align === "right" ? "place-items-end" : "place-items-center";
 
   return (
-    <div className="min-h-svh bg-black text-white">
+    <div className="min-h-svh bg-background text-foreground">
       <PreviewLinkManager />
-      {/* Header with LV-like layout */}
-      <header className="fixed top-0 left-0 right-0 z-40">
-        <div className="h-16 flex items-center justify-center relative px-4">
-          {/* Left: menu + search */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-5 text-sm">
-            <a href="#" className="inline-flex items-center gap-2 hover:opacity-80">
-              <Menu className="size-5" />
-              <span className="hidden sm:inline">Menu</span>
-            </a>
-            <a href="#" className="inline-flex items-center gap-2 hover:opacity-80">
-              <Search className="size-5" />
-              <span className="hidden sm:inline">Search</span>
-            </a>
-          </div>
-
-          {/* Brand centered */}
-          <div className="text-lg md:text-xl tracking-[0.35em] font-semibold uppercase select-none font-brand">
-            {store.name}
-          </div>
-
-          {/* Right: contact + icons */}
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-4">
-            <a href="#" className="hidden md:inline text-sm hover:opacity-80">Contact us</a>
-            <a href="#" aria-label="Wishlist" className="hover:opacity-80"><Heart className="size-5" /></a>
-            <a href="#" aria-label="Account" className="hover:opacity-80"><User className="size-5" /></a>
-            <a href="#" aria-label="Bag" className="hover:opacity-80"><ShoppingBag className="size-5" /></a>
-          </div>
-
-          {isPreview && (
-            <div className="absolute right-4 top-[calc(100%+6px)] flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-yellow-400 text-black px-3 py-1 text-xs font-semibold shadow">
-                Preview mode
-              </span>
-              <a href="?preview=0" className="text-xs underline underline-offset-2 hover:opacity-80">Exit preview</a>
-            </div>
-          )}
-        </div>
-      </header>
+      <StorefrontHeader storeName={store.name} isPreview={isPreview} />
 
       {/* Hero background */}
       <section className="relative h-svh w-full">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={hero} alt={title} className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-black/0" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-background/20 to-transparent dark:from-black/50 dark:via-black/10 dark:to-black/0" />
 
         {/* Bottom overlay content */}
         <div className={`absolute left-0 right-0 bottom-12 px-6 md:px-10 grid ${place}`}>
           <div className={`max-w-2xl w-full flex flex-col ${justify} gap-2`}>
-            {kicker && <div className="text-[11px] md:text-xs tracking-[0.35em] uppercase text-white/80 font-brand">{kicker}</div>}
-            <h1 className="text-3xl md:text-6xl font-semibold drop-shadow font-brand">{title}</h1>
-            {subtitle && <p className="text-sm md:text-base text-white/90 font-brand">{subtitle}</p>}
+            {kicker && <div className="text-[11px] md:text-xs tracking-[0.35em] uppercase text-foreground/60 font-brand">{kicker}</div>}
+            <h1 className="text-3xl md:text-6xl font-semibold drop-shadow font-brand text-foreground">{title}</h1>
+            {subtitle && <p className="text-sm md:text-base text-foreground/80 font-brand">{subtitle}</p>}
             <div className="mt-3 flex flex-wrap gap-4">
               {home.ctaPrimary?.label && home.ctaPrimary?.href && (
-                <a href={home.ctaPrimary.href} className="inline-flex items-center gap-2 text-sm md:text-base underline underline-offset-4 decoration-white/70 hover:opacity-90">
+                <a href={home.ctaPrimary.href} className="inline-flex items-center gap-2 text-sm md:text-base underline underline-offset-4 decoration-foreground/60 hover:opacity-90 transition-opacity">
                   {home.ctaPrimary.label}
                   <span aria-hidden>→</span>
                 </a>
               )}
               {home.ctaSecondary?.label && home.ctaSecondary?.href && (
-                <a href={home.ctaSecondary.href} className="inline-flex items-center gap-2 text-sm md:text-base underline underline-offset-4 decoration-white/40 hover:opacity-90">
+                <a href={home.ctaSecondary.href} className="inline-flex items-center gap-2 text-sm md:text-base underline underline-offset-4 decoration-foreground/30 hover:opacity-90 transition-opacity">
                   {home.ctaSecondary.label}
                   <span aria-hidden>→</span>
                 </a>

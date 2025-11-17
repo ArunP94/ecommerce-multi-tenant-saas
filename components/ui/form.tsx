@@ -147,9 +147,14 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
     <p
       data-slot="form-message"
       id={formMessageId}
-      className={cn("text-destructive text-sm", className)}
+      className={cn(
+        "text-sm font-medium flex items-center gap-1.5",
+        error ? "text-destructive" : "text-muted-foreground",
+        className
+      )}
       {...props}
     >
+      {error && <span className="text-lg leading-none">⚠</span>}
       {body}
     </p>
   )
