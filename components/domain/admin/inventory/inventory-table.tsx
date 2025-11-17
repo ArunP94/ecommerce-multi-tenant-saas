@@ -80,8 +80,7 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // SKU is readonly and not sent
-          price: Number(row.price),
+          // SKU and Price are readonly and not sent
           inventory: Number(row.inventory),
           trackInventory: row.trackInventory,
           backorder: row.backorder,
@@ -191,7 +190,9 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
                         />
                       </TableCell>
                       <TableCell className="px-2 py-2 min-w-28">
-                        <Input type="number" step="0.01" min="0" value={r.price} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, price: Number(e.target.value) } : p))} />
+                        <span className="text-sm font-medium text-muted-foreground">
+                          £{r.price.toFixed(2)}
+                        </span>
                       </TableCell>
                       <TableCell className="px-2 py-2 min-w-24">
                         <Input type="number" step="1" min="0" value={r.inventory} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, inventory: Number(e.target.value) } : p))} disabled={!r.trackInventory} />
@@ -237,7 +238,9 @@ function InventoryTableContent({ storeId, initialVariants }: { storeId: string; 
                     />
                   </TableCell>
                   <TableCell className="px-2 py-2 min-w-28">
-                    <Input type="number" step="0.01" min="0" value={r.price} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, price: Number(e.target.value) } : p))} />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      £{r.price.toFixed(2)}
+                    </span>
                   </TableCell>
                   <TableCell className="px-2 py-2 min-w-24">
                     <Input type="number" step="1" min="0" value={r.inventory} onChange={(e) => setRows((prev) => prev.map(p => p.id === r.id ? { ...p, inventory: Number(e.target.value) } : p))} disabled={!r.trackInventory} />
