@@ -3,15 +3,18 @@ import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { InviteUserForm } from "@/components/domain/forms/invite-user-form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PageHeader, PageSection } from "@/components/primitives";
 
 export default async function UsersPage() {
   const session = await auth();
   if (!session || session.user.role !== "SUPER_ADMIN") {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold">Users</h1>
-        <p className="text-sm text-muted-foreground">Only super admins can invite and manage users.</p>
-      </div>
+      <PageSection>
+        <PageHeader
+          title="Users"
+          description="Only super admins can invite and manage users."
+        />
+      </PageSection>
     );
   }
 
@@ -23,11 +26,11 @@ export default async function UsersPage() {
   const storeMap = new Map(stores.map((s) => [s.id, s.name] as const));
 
   return (
-    <div className="px-4 pb-8 lg:px-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Users</h1>
-        <p className="text-sm text-muted-foreground">Invite and manage users.</p>
-      </div>
+    <PageSection spacing="lg">
+      <PageHeader
+        title="Users"
+        description="Invite and manage users."
+      />
 
       <Card className="@container">
         <CardHeader>
@@ -72,6 +75,6 @@ export default async function UsersPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageSection>
   );
 }

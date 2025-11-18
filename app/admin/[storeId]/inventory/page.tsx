@@ -4,6 +4,7 @@ import { requireStoreAccess } from "@/lib/require-store";
 import { prisma } from "@/lib/prisma";
 import InventoryTable from "@/components/domain/admin/inventory/inventory-table";
 import { InventoryPageClient } from "@/components/domain/admin/inventory/inventory-page-client";
+import { PageHeader, PageSection } from "@/components/primitives";
 
 export default async function InventoryPage({ params }: { params: Promise<{ storeId: string }> }) {
   const { storeId } = await params;
@@ -16,13 +17,15 @@ export default async function InventoryPage({ params }: { params: Promise<{ stor
   });
 
   return (
-    <div className="p-6">
+    <PageSection>
       <InventoryPageClient storeId={storeId} />
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold">Inventory</h1>
-        <p className="text-sm text-muted-foreground">Manage stock and inventory flags per variant</p>
-      </div>
+      
+      <PageHeader
+        title="Inventory"
+        description="Manage stock and inventory flags per variant"
+      />
+      
       <InventoryTable storeId={storeId} initialVariants={variants} />
-    </div>
+    </PageSection>
   );
 }

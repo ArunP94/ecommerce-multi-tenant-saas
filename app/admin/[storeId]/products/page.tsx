@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProductsTable from "@/components/domain/admin/products/products-table";
 import { ProductsPageClient } from "@/components/domain/admin/products/products-page-client";
+import { PageHeader, PageSection } from "@/components/primitives";
+import { TablePagination } from "@/components/patterns";
 
 export default async function StoreProductsPage({ params, searchParams }: { params: Promise<{ storeId: string; }>; searchParams: Promise<{ q?: string; page?: string }> }) {
   const { storeId } = await params;
@@ -28,17 +30,18 @@ export default async function StoreProductsPage({ params, searchParams }: { para
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="p-6 space-y-4">
+    <PageSection>
       <ProductsPageClient storeId={storeId} />
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Products</h1>
-          <p className="text-sm text-muted-foreground">Manage products for store {storeName}.</p>
-        </div>
-        <Button asChild>
-          <Link href={`/admin/${storeId}/products/new`}>Create product</Link>
-        </Button>
-      </div>
+      
+      <PageHeader
+        title="Products"
+        description={`Manage products for store ${storeName}.`}
+        action={
+          <Button asChild>
+            <Link href={`/admin/${storeId}/products/new`}>Create product</Link>
+          </Button>
+        }
+      />
 
       <form className="flex gap-2" method="get">
         <Input name="q" placeholder="Search by title" defaultValue={q} />
@@ -57,17 +60,12 @@ export default async function StoreProductsPage({ params, searchParams }: { para
         }))}
       />
 
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-muted-foreground">Page {page} of {totalPages} ({total} items)</div>
-        <div className="flex items-center gap-2">
-          <Button asChild size="sm" variant="outline" disabled={page <= 1}>
-            <Link href={`?${new URLSearchParams({ q, page: String(Math.max(1, page - 1)) }).toString()}`}>Previous</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline" disabled={page >= totalPages}>
-            <Link href={`?${new URLSearchParams({ q, page: String(Math.min(totalPages, page + 1)) }).toString()}`}>Next</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
+      <TablePagination
+        currentPage={page}
+        totalPages={totalPages}
+        totalItems={total}
+        buildPageUrl={(p) => `?${new URLSearchParams({ q, page: String(p) }).toString()}`}
+      />
+    </PageSection>
   );
 }

@@ -8,27 +8,31 @@ import { ClientOnly } from "@/components/core/client-only";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StoresPageClient } from "@/components/domain/admin/stores/stores-page-client";
+import { PageHeader, PageSection } from "@/components/primitives";
 
 export default async function StoresPage() {
   const session = await auth();
   if (!session || session.user.role !== "SUPER_ADMIN") {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-semibold">Stores</h1>
-        <p className="text-sm text-muted-foreground">Only super admins can manage stores.</p>
-      </div>
+      <PageSection>
+        <PageHeader
+          title="Stores"
+          description="Only super admins can manage stores."
+        />
+      </PageSection>
     );
   }
 
   const stores = await prisma.store.findMany({ select: { id: true, name: true, slug: true, customDomain: true }, orderBy: { createdAt: "desc" } });
 
   return (
-    <div className="px-4 pb-8 lg:px-6 space-y-6">
+    <PageSection spacing="lg">
       <StoresPageClient />
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold">Stores</h1>
-        <p className="text-sm text-muted-foreground">Create and manage stores.</p>
-      </div>
+      
+      <PageHeader
+        title="Stores"
+        description="Create and manage stores."
+      />
 
       <Card className="@container">
         <CardHeader>
@@ -100,6 +104,6 @@ export default async function StoresPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageSection>
   );
 }
