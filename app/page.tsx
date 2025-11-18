@@ -16,6 +16,7 @@ import {
   Package,
   CreditCard,
 } from "lucide-react";
+import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 
 export default async function Home() {
   return (
@@ -28,6 +29,7 @@ export default async function Home() {
             Multi‑Tenant SaaS
           </Link>
           <nav className="flex items-center gap-3">
+            <ThemeSwitcher />
             <Button asChild variant="ghost" size="sm">
               <Link href="#features">Features</Link>
             </Button>
