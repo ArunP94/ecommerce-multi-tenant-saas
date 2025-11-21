@@ -2,7 +2,6 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import type Stripe from "stripe";
 import { ApiResponse } from "@/lib/api/response-factory";
-import { env } from "@/lib/config/env";
 
 export const runtime = "nodejs";
 
@@ -20,7 +19,7 @@ export async function POST(req: Request) {
       event = stripe.webhooks.constructEvent(
         rawBody,
         sig,
-        env.STRIPE_WEBHOOK_SECRET || ""
+        process.env.STRIPE_WEBHOOK_SECRET || ""
       );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";

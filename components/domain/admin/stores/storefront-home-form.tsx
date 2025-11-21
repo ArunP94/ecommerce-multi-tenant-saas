@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
+import { StyledUploadButton } from "@/components/ui/styled-upload-button";
 
 export type HomeSettings = {
   title?: string;
@@ -18,13 +17,6 @@ export type HomeSettings = {
   ctaPrimary?: { label?: string; href?: string; };
   ctaSecondary?: { label?: string; href?: string; };
   align?: "left" | "center" | "right";
-};
-
-// Define a type-safe structure for upload responses
-type UploadedFile = {
-  url?: string;
-  serverData?: { url?: string; };
-  file?: { url?: string; };
 };
 
 export default function StorefrontHomeForm({
@@ -134,22 +126,20 @@ export default function StorefrontHomeForm({
                   <div className="h-full w-full grid place-items-center text-sm text-muted-foreground">No image selected</div>
                 )}
               </div>
-              <UploadButton<OurFileRouter, "storeHero">
+              <StyledUploadButton
                 endpoint="storeHero"
-                onClientUploadComplete={(files) => {
-                  const f: UploadedFile | undefined = Array.isArray(files) && files.length > 0 ? (files[0] as UploadedFile) : undefined;
-                  const url = f?.url ?? f?.serverData?.url ?? f?.file?.url;
-                  if (url) {
-                    setHeroUrl(url);
+                onComplete={(files) => {
+                  if (files.length > 0 && files[0].url) {
+                    setHeroUrl(files[0].url);
                     toast.success("Hero image uploaded");
-                  } else {
-                    toast.error("Upload finished, but no URL returned");
                   }
                 }}
-                onUploadError={(e) => {
+                onError={(e) => {
                   toast.error(e.message || "Upload failed");
                 }}
-              />
+              >
+                Upload hero image
+              </StyledUploadButton>
             </div>
           </div>
         </div>

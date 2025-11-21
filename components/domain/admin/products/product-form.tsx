@@ -5,8 +5,6 @@ import { useState } from "react";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller, type FieldPath, type Resolver } from "react-hook-form";
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { StyledUploadButton } from "@/components/ui/styled-upload-button";
 import {
   DndContext,

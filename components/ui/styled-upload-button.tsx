@@ -3,20 +3,28 @@
 import * as React from "react";
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
-import { Button, type ButtonProps } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import type { VariantProps } from "class-variance-authority";
+import { buttonVariants } from "@/components/ui/button";
 
-interface StyledUploadButtonProps<T extends keyof OurFileRouter> {
-  endpoint: T;
-  onComplete?: (files: { url: string }[]) => void;
+type ButtonVariant = VariantProps<typeof buttonVariants>["variant"];
+type ButtonSize = VariantProps<typeof buttonVariants>["size"];
+
+interface UploadedFile {
+  url: string;
+}
+
+interface StyledUploadButtonProps {
+  endpoint: keyof OurFileRouter;
+  onComplete?: (files: UploadedFile[]) => void;
   onError?: (error: Error) => void;
-  variant?: ButtonProps["variant"];
-  size?: ButtonProps["size"];
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   className?: string;
   children: React.ReactNode;
 }
 
-export function StyledUploadButton<T extends keyof OurFileRouter>({
+export function StyledUploadButton({
   endpoint,
   onComplete,
   onError,
@@ -24,47 +32,57 @@ export function StyledUploadButton<T extends keyof OurFileRouter>({
   size = "default",
   className,
   children,
-}: StyledUploadButtonProps<T>) {
+}: StyledUploadButtonProps) {
+  const handleUploadComplete = (files: UploadedFile[]): void => {
+    const urls = (files || [])
+      .filter((file): file is UploadedFile => file?.url !== undefined)
+      .map((file) => ({ url: file.url }));
+    if (urls.length > 0) {
+      onComplete?.(urls);
+    }
+  };
+
+  const handleUploadError = (error: Error | { message?: string }): void => {
+    const err = error instanceof Error ? error : new Error(String(error?.message || "Upload failed"));
+    onError?.(err);
+  };
+
+  const getButtonStyles = (): string => {
+    const baseStyles = buttonVariants({ variant, size });
+    return className ? `${baseStyles} ${className}` : baseStyles;
+  };
+
+  const customFetch = (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const isLocalApi = typeof url === "string" && (url.startsWith("/api/uploadthing") || url.includes("localhost"));
+    
+    return fetch(input, {
+      ...init,
+      credentials: isLocalApi ? "include" : (init?.credentials ?? "omit"),
+    });
+  };
+
   return (
-    <UploadButton<OurFileRouter, T>
-      endpoint={endpoint}
-      onClientUploadComplete={(files) => {
-        const urls = files
-          .map((f) => {
-            const url = f?.url ?? f?.serverData?.url ?? f?.file?.url;
-            return url ? { url } : null;
-          })
-          .filter((f): f is { url: string } => f !== null);
-        if (urls.length > 0) {
-          onComplete?.(urls);
-        }
-      }}
-      onUploadError={(error) => {
-        onError?.(error);
-      }}
+    <UploadButton<OurFileRouter, keyof OurFileRouter>
+      endpoint={endpoint as keyof OurFileRouter}
+      onClientUploadComplete={handleUploadComplete as (files: unknown[]) => void}
+      onUploadError={handleUploadError as (error: Error) => void}
+      fetch={customFetch}
       appearance={{
         container: "w-fit",
-        button: "", // Let wrapper handle all styling
+        button: getButtonStyles(),
         allowedContent: "hidden",
       }}
       content={{
-        button: ({ ready, isUploading }) => (
-          <Button
-            type="button"
-            variant={variant}
-            size={size}
-            disabled={!ready || isUploading}
-            className={className}
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="size-4 mr-2 animate-spin" />
-                Uploading…
-              </>
-            ) : (
-              children
-            )}
-          </Button>
+        button: ({ isUploading }) => (
+          isUploading ? (
+            <>
+              <Loader2 className="size-4 mr-2 animate-spin" />
+              Uploading…
+            </>
+          ) : (
+            children
+          )
         ),
       }}
     />

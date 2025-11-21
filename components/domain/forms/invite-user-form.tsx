@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { FormInput, FormSelect } from "@/components/domain/forms/fields";
@@ -13,6 +14,7 @@ interface InviteUserFormProps {
 }
 
 export function InviteUserForm({ stores }: InviteUserFormProps) {
+  const router = useRouter();
   const form = useForm<InviteUserFormValues>({
     resolver: zodResolver(inviteUserSchema),
     mode: "onChange",
@@ -22,7 +24,10 @@ export function InviteUserForm({ stores }: InviteUserFormProps) {
   const { isPending, startTransition } = useFormState(form, {
     successMessage: "Invitation sent",
     errorMessage: "Failed to send invite",
-    onSuccess: () => form.reset({ email: "", role: "STAFF", storeId: stores[0]?.id ?? "" }),
+    onSuccess: () => {
+      form.reset({ email: "", role: "STAFF", storeId: stores[0]?.id ?? "" });
+      router.refresh();
+    },
   });
 
   const onSubmit = async (values: InviteUserFormValues) => {

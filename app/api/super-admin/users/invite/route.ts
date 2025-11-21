@@ -5,7 +5,6 @@ import { sendMail } from "@/lib/mail";
 import { inviteEmail } from "@/lib/email-templates";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { rateLimit } from "@/lib/redis";
-import { env } from "@/lib/config/env";
 import { inviteUserSchema } from "@/lib/validation/api-schemas";
 
 export async function POST(req: Request) {
@@ -60,7 +59,7 @@ export async function POST(req: Request) {
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24);
     await prisma.passwordResetToken.create({ data: { token, userId, userEmail: email, expiresAt } });
 
-    const base = env.NEXTAUTH_URL || "http://localhost:3000";
+    const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const link = `${base}/reset-password?token=${token}`;
 
     try {

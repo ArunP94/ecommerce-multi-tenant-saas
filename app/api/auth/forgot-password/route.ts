@@ -4,7 +4,6 @@ import { sendMail } from "@/lib/mail";
 import { resetPasswordEmail } from "@/lib/email-templates";
 import { ApiResponse } from "@/lib/api/response-factory";
 import { rateLimit } from "@/lib/redis";
-import { env } from "@/lib/config/env";
 
 export async function POST(req: Request) {
   try {
@@ -36,7 +35,7 @@ export async function POST(req: Request) {
       data: { token, userId: user.id, userEmail: user.email, expiresAt },
     });
 
-    const base = env.NEXTAUTH_URL || "http://localhost:3000";
+    const base = process.env.NEXTAUTH_URL || "http://localhost:3000";
     const link = `${base}/reset-password?token=${token}`;
 
     try {

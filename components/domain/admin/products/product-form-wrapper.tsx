@@ -6,7 +6,7 @@ import { ProductFormSkeleton } from "@/components/ui/product-form-skeleton";
 
 const ProductFormComponent = dynamic(() => import("./product-form"), {
   loading: () => <ProductFormSkeleton />,
-  ssr: true,
+  ssr: false,
 });
 
 export type ProductFormProps = React.ComponentProps<typeof ProductFormComponent>;

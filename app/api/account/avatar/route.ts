@@ -8,6 +8,10 @@ export async function DELETE() {
     await prisma.user.update({ where: { id: session.user.id }, data: { image: null } });
     return ApiResponse.success({ success: true });
   } catch (error) {
-    return handleAuthError(error);
+    if (error instanceof Error && (error.message === "UNAUTHORIZED" || error.message === "FORBIDDEN")) {
+      return handleAuthError(error);
+    }
+    console.error("Failed to delete avatar:", error instanceof Error ? error.message : String(error));
+    return ApiResponse.internalError();
   }
 }

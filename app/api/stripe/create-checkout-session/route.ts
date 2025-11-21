@@ -1,6 +1,5 @@
 import { stripe } from "@/lib/stripe";
 import { ApiResponse } from "@/lib/api/response-factory";
-import { env } from "@/lib/config/env";
 import { rateLimit } from "@/lib/redis";
 import { checkoutSessionSchema } from "@/lib/validation/api-schemas";
 
@@ -22,7 +21,7 @@ export async function POST(req: Request) {
     }
     const { storeId, orderId, currency, items } = parsed.data;
 
-    const origin = req.headers.get("origin") || env.NEXTAUTH_URL || "http://localhost:3000";
+    const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL || "http://localhost:3000";
     const success_url = `${origin}/checkout/success`;
     const cancel_url = `${origin}/checkout/cancel`;
 

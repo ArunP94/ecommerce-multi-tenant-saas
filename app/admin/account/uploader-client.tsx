@@ -1,10 +1,9 @@
 "use client";
 
-import { UploadButton } from "@uploadthing/react";
-import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { useState } from "react";
 import { ImageUp, Trash2 } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { StyledUploadButton } from "@/components/ui/styled-upload-button";
 
 export default function ClientAvatarUploader() {
   const [status, setStatus] = useState<string | null>(null);
@@ -27,40 +26,29 @@ export default function ClientAvatarUploader() {
 
   return (
     <div className="flex flex-col gap-2">
-      <UploadButton<OurFileRouter, "avatar">
+      <StyledUploadButton
         endpoint="avatar"
-        onClientUploadComplete={(files: { url?: string; serverData?: { url?: string }; file?: { url?: string } }[]) => {
-          try {
-            const f = Array.isArray(files) && files.length > 0 ? files[0] : undefined;
-            const url = f?.url ?? f?.serverData?.url ?? f?.file?.url;
-            if (url) {
-              window.dispatchEvent(new CustomEvent("user:updated", { detail: { image: url } }));
-              setStatus("Uploaded successfully");
-            } else {
-              setStatus("Uploaded, but no URL returned");
-            }
-          } catch {
-            setStatus("Upload finished, but failed to read response");
+        onComplete={(files) => {
+          const url = files?.[0]?.url;
+          if (url) {
+            window.dispatchEvent(new CustomEvent("user:updated", { detail: { image: url } }));
+            setStatus("Uploaded successfully");
+          } else {
+            setStatus("Uploaded, but no URL returned");
           }
         }}
-        onUploadError={(e) => {
+        onError={(e) => {
           const message = e.message || "Upload failed";
           setStatus(message);
           window.dispatchEvent(new CustomEvent("avatar:upload:error", { detail: { message } }));
         }}
-        appearance={{
-          container: "w-full",
-          button: `${buttonVariants({ variant: "default", size: "default" })} w-full` as unknown as string,
-        }}
-        content={{
-          button: ({ ready }) => (
-            <span className="inline-flex items-center justify-center gap-2">
-              <ImageUp className="size-4" />
-              {ready ? "Upload photo" : "Preparing…"}
-            </span>
-          ),
-        }}
-      />
+        className="w-full"
+      >
+        <span className="inline-flex items-center justify-center gap-2">
+          <ImageUp className="size-4" />
+          Upload photo
+        </span>
+      </StyledUploadButton>
 
       <Button variant="destructive" className="w-full" onClick={onRemove} disabled={busy}>
         <Trash2 className="mr-2 size-4" /> Remove photo

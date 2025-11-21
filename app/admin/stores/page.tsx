@@ -1,13 +1,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { DeleteStoreButton } from "@/components/domain/admin/delete-store-button";
 import { CreateStoreForm } from "@/components/domain/forms/create-store-form";
-import { ViewStoreLink } from "@/components/domain/admin/view-store-link";
 import { ClientOnly } from "@/components/core/client-only";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StoresPageClient } from "@/components/domain/admin/stores/stores-page-client";
+import StoresTable from "@/components/domain/admin/stores/stores-table";
 import { PageHeader, PageSection } from "@/components/primitives";
 
 export default async function StoresPage() {
@@ -72,36 +70,14 @@ export default async function StoresPage() {
           <CardDescription>Recently created stores</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto rounded-md border">
-            <Table className="w-full text-sm">
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead className="px-2 py-2 text-left font-medium">Name</TableHead>
-                  <TableHead className="px-2 py-2 text-left font-medium">Slug</TableHead>
-                  <TableHead className="px-2 py-2 text-left font-medium">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stores.map((s) => (
-                  <TableRow key={s.id} className="border-b last:border-0">
-                    <TableCell className="px-2 py-2">{s.name}</TableCell>
-                    <TableCell className="px-2 py-2">/{s.slug}</TableCell>
-                    <TableCell className="px-2 py-2">
-                      <div className="flex items-center gap-2">
-                        <ViewStoreLink slug={s.slug} customDomain={s.customDomain} />
-                        <DeleteStoreButton storeId={s.id} storeName={s.name} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {stores.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="px-2 py-2 text-sm text-muted-foreground">No stores yet.</TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          <StoresTable
+            data={stores.map((s) => ({
+              id: s.id,
+              name: s.name,
+              slug: s.slug,
+              customDomain: s.customDomain,
+            }))}
+          />
         </CardContent>
       </Card>
     </PageSection>
